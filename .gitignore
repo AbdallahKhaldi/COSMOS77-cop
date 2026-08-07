@@ -1,0 +1,31 @@
+# Secrets — NEVER in git (playbook §0.10; leaked = rotate in Cloud Console, deleting isn't enough)
+.env
+credentials.json
+token.json
+token.pickle
+
+# Team identity template lives in the workspace root, never inside a repo
+TEAM.env.md
+
+# Private per-machine peer config (ports, opponent URLs, passphrases)
+config/peer.toml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Tooling caches / reports
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+dist/
+*.egg-info/
+
+# Runtime output (counted artifacts are committed under artifacts/, friendlies archived under results/)
+runs/
+
+# macOS
+.DS_Store

@@ -1,0 +1,57 @@
+[project]
+name = "cosmos77-cop"
+version = "0.1.0"
+description = "COSMOS77 cop agent — Distributed Cops-and-Robbers over a P2P network (course 203.3763 final project)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+authors = [
+    { name = "Tasneem Natour" },
+    { name = "Abdallah Khaldi" },
+]
+dependencies = [
+    "fastmcp>=2.0,<3.0",
+    "google-genai",
+    "google-auth",
+    "google-auth-oauthlib",
+    "google-api-python-client",
+    "uvicorn",
+]
+
+[project.scripts]
+cosmos-cop = "cosmos77_cop.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cosmos77_cop"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=cosmos77_cop --cov-report=term-missing --cov-fail-under=85"
+
+[tool.coverage.run]
+branch = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "D", "ANN"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "ANN"]
