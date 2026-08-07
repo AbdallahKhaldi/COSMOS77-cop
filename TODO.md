@@ -9,15 +9,10 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
       repos scaffolded (uv/py3.12, §3 skeleton, seed tests 100% cov, ruff strict), 3-agent
       bootstrap audit clean, pushed to GitHub, Tasneem invited as collaborator.
 - [x] Phase 1 (2026-08-07): PRD-1…7 + PLAN.md + this file, role-adapted in both repos.
+- [x] Phase 2 (2026-08-07): `config/game.json` constitution + rule-12 loader (FIXED/MINIMUM),
+      `engine/` board/rules/capture/subgame — 55 tests incl. rule-47 brute-force sweep, 99% cov.
 
-## Phase 2 — engine (next)
-
-- [ ] `config/game.json` constitution with §1 defaults (flat 14 terms + extended blocks) + loader
-      that enforces FIXED/MINIMUM statuses (rule 12).
-- [ ] `engine/board.py`, `rules.py`, `capture.py`, `subgame.py` — TDD per PRD-1 acceptance list.
-- [ ] Rule-47 brute-force cross-check property test; rule-46 radius cases; zeroed-sanction rows.
-
-## Phase 3 — strategy
+## Phase 3 — strategy (next)
 
 - [ ] Read HW6 `strategy/pursuit.py`; port retrograde technique (orthogonal + enlarged capture set).
 - [ ] `solver.py` <100 ms; empty-board ∞ check; trap conversion check.
