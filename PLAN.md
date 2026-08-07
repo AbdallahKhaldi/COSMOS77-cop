@@ -18,7 +18,7 @@ verbatim). Never advance on a red gate; never weaken a gate to pass it.
 | 8 | phase-8-sparring | — | Interop exam vs kit sparring peer | 4 combos × both scent models green; thief survives; cop converts; tracker offset 0 | ✅ 2026-08-08 |
 | 9 | phase-9-ui | PRD-7 | Live GUI + replay viewer | live GUI in selfplay; replay Verified OK + TAMPERED on corruption | ✅ 2026-08-08 |
 | 10 | phase-10-report | PRD-7 | Gmail + Gatekeeper + counted reporting | byte-exact dry-run; gatekeeper matrix; armed-path proof | ✅ 2026-08-08 |
-| 11 | phase-11-deploy | PRD-5 | Render + cloudflared runbooks | 406 on both services; cross-machine F1; loopback pass | — |
+| 11 | phase-11-deploy | PRD-5 | Render + cloudflared runbooks | code side done; **406 / F1 / loopback need the human to deploy** | ⏳ 2026-08-08 |
 | 11B | phase-11b-console | PRD-7 | Challenge Console + standing friendly | console-driven F1 vs sparring; bundle byte-match; web-cannot-arm | — |
 | 12 | phase-12-readme | — | Academic README, tag, submission pack | README checklists; docx filled; §6 checklist | — |
 | 13 | phase-13-league (per opponent) | — | F1→F2→F3→counted→settle→report | compare ritual both directions; consensus hash byte-equal; both reports delivered | — |

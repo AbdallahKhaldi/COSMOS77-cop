@@ -1,0 +1,26 @@
+# Render service for the cop peer — availability + handshake smoke ONLY (see docs/DEPLOY.md).
+#
+# A Render peer deliberately has no Gmail credentials and an ephemeral disk, so it cannot write
+# the artifacts a friendly needs or send a report. F2/F3 friendlies and every counted run execute
+# locally behind cloudflared, on the exact bytes and the exact network path the counted game uses.
+services:
+  - type: web
+    name: cosmos77-cop
+    runtime: python
+    plan: free
+    # EDITABLE install: a plain `pip install .` orphans config/, and the peer refuses to start
+    # without its constitution (HW6 lesson, relearned the hard way).
+    buildCommand: pip install -e .
+    startCommand: uvicorn cosmos77_cop.net.asgi:app --host 0.0.0.0 --port $PORT
+    # MUST stay blank: an MCP server has no GET / — a health check would flap the service.
+    # The ready signal is a 406 from a bare GET at /mcp (never a 200).
+    healthCheckPath: ""
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: WEB_PASSPHRASE
+        sync: false
+      - key: STANDING_FRIENDLY
+        value: "1"
