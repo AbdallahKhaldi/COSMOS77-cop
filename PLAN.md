@@ -9,7 +9,7 @@ verbatim). Never advance on a red gate; never weaken a gate to pass it.
 |---|---|---|---|---|---|
 | 0 | main (bootstrap) | — | Repos, uv/py3.12, skeletons, kit verified | uv sync + pytest + ruff clean ×2; kit 113/113 vectors + 6/6 selfplay | ✅ 2026-08-07 |
 | 1 | phase-1-prds | all | Seven PRDs + PLAN + TODO (development story, rule 50) | 7 PRDs with acceptance criteria + PLAN + TODO in both repos | ✅ 2026-08-07 |
-| 2 | phase-2-engine | PRD-1 | Board physics, endings 46/47, scoring | engine tests green, cov ≥85%, ≤150 lines/file | — |
+| 2 | phase-2-engine | PRD-1 | Board physics, endings 46/47, scoring | engine tests green, cov ≥85%, ≤150 lines/file | ✅ 2026-08-07 |
 | 3 | phase-3-strategy | PRD-3 | Retrograde solver, tracker, cop brain | property tests: empty-board ∞, trap conversion, 35-step survival floor | — |
 | 4 | phase-4-protocol | PRD-6 | Kit-conformant crypto + vendored protocol | ALL kit vectors green in both repos; sync identity test | — |
 | 5 | phase-5-net | PRD-2 | MCP peer, receiver contract, state machine | fault-injection ledger byte-identical; `make smoke` green | — |
