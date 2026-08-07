@@ -71,11 +71,13 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
 - [ ] **HUMAN**: create the two Render web services, set env vars, `brew install cloudflared`,
       then confirm 406 on both `/mcp` URLs + a cross-machine F1 + `netcheck --loopback`.
 
-## Phase 9–12 — GUI/replay · Gmail/Gatekeeper · deploy · console · README/tag
-
-- [ ] Per PRD-5/PRD-7; screenshots (incl. one DEGRADED/fuzzy heatmap + captioned exact-mode shot);
-      `docs/DECISIONS.md` ADRs (App-F#5 commit-mail reading, friendly-report recipients, SHA-256
-      "signatures", rate-limits location); docx from TEAM.env.md (self-score 90, bonus No).
+- [x] Phase 12 (2026-08-08): both READMEs rewritten as the academic report (Dec-POMDP model +
+      the inversion contribution AND its measured limit, FastMCP dilemmas, honest game theory,
+      why-no-RL, screenshots, ledger table, ADR/sparring links); `scripts/gen_submission.py`
+      fills the Moodle form from TEAM.env.md and flags what a human still owes;
+      `scripts/preflight.py` runs the §11.5 checklist as code — **17/17 mechanical checks pass in
+      both repos**. The checklist caught six files that had drifted past the 150-line cap; all
+      split into cohesive modules rather than weakening the rule.
 
 ## Phase 13 — league (per opponent)
 
