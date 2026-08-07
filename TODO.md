@@ -36,10 +36,18 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
       (seeded bluff policy -> Gemini per cadence -> templates -> lint), 15-word cap, digit-free,
       truthful intents, HintMeter per sub-game/series; liar-score calibration. 231/230 tests.
 
-## Phase 7 — series/artifacts · Phase 8 — sparring exam
+- [x] Phase 7 (2026-08-07): live turn loop (thief-first, claims/concessions/win-claims,
+      message-driven endings), six-window SeriesDriver (role-label alternation, fresh runtimes,
+      greeting-preserving drains, re-greeting handshakes), 4-layer audit exchange + settlement,
+      counted-format artifacts (canonical bytes+newline). REAL selfplay: 6/6 settled two-process,
+      14 artifacts, kit check_artifacts ALL PASS incl. --terms uid derivation. CLI: serve,
+      selfplay, kill, compare, doctor.
 
-- [ ] Per PRD-7 acceptance list; sparring gate: 4 role/model combos, `--hint-lang mixed`,
-      `--turn-timeout 30`, tracker offset 0 vs audit-revealed trail; freeze capture-rate regression.
+## Phase 8 — sparring exam (next)
+
+- [ ] 4 role/model combos vs kit sparring peer, `--hint-lang mixed`, `--turn-timeout 30`;
+      tracker offset 0 vs audit-revealed trail; freeze capture-rate regression; our thief must
+      survive the sparring cop; tune the building regime until our cop beats the sparring thief.
 
 ## Phase 9–12 — GUI/replay · Gmail/Gatekeeper · deploy · console · README/tag
 

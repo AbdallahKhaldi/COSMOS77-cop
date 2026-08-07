@@ -39,5 +39,6 @@ make lint      # ruff; zero violations policy
 | 4 | Protocol crypto: every kit vector replayed green; 4-layer audit; vendored protocol/ synced byte-exact | done |
 | 5 | MCP net: 4 tools, at-least-once receiver, N00-N10 handshake, two-process smoke green | done |
 | 6 | Scent pipeline (deposit-then-decay trail, argmax-stable wire), Gemini bluffs (metered, any-failure template fallback), liar-score | done |
-| 7 | Series driver + counted-format artifacts | next |
+| 7 | Series driver: live turn loop, 6 windows, mutual audits, 14 kit-valid artifacts, selfplay 6/6 over real HTTP | done |
+| 8 | Sparring interop exam vs the community kit | next |
 | 6–13 | Scent/hints → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |

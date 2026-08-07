@@ -17,9 +17,14 @@ def test_cli_reports_version(capsys):
     assert f"cosmos-cop {cosmos77_cop.__version__}" in capsys.readouterr().out
 
 
-def test_cli_default_names_pending_subcommands(capsys):
+def test_cli_default_lists_live_subcommands(capsys):
     assert main([]) == 0
-    assert "Phase 7" in capsys.readouterr().out
+    assert "selfplay" in capsys.readouterr().out
+
+
+def test_cli_unknown_subcommand_fails_loudly(capsys):
+    assert main(["nonsense"]) == 2
+    assert "unknown subcommand" in capsys.readouterr().out
 
 
 def test_sdk_facade_is_documented():
