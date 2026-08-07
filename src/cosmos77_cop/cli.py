@@ -11,7 +11,7 @@ import sys
 
 from cosmos77_cop import __version__
 
-_PENDING = "friendly|counted|report"
+_PENDING = "friendly|counted"
 
 
 def _serve(argv: list[str]) -> int:
@@ -97,6 +97,17 @@ def _replay(argv: list[str]) -> int:
     return replay_cmd(args.log, screenshot_dir=args.screenshot, expect_clean=args.expect_clean)
 
 
+def _report(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="cosmos-cop report")
+    parser.add_argument("result")
+    parser.add_argument("--counted", action="store_true", help="second arming switch (rule 37)")
+    parser.add_argument("--send", action="store_true", help="actually send; default is a dry run")
+    args = parser.parse_args(argv)
+    from cosmos77_cop.commands import report_cmd
+
+    return report_cmd(args.result, counted=args.counted, dry_run=not args.send)
+
+
 def _compare(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="cosmos-cop compare")
     parser.add_argument("ours")
@@ -119,6 +130,7 @@ def main(argv: list[str] | None = None) -> int:
         "smoke-peer": _smoke_peer,
         "compare": _compare,
         "replay": _replay,
+        "report": _report,
     }
     if args and args[0] in handlers:
         return handlers[args[0]](args[1:])
@@ -133,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
     if args:
         print(f"cosmos-cop: unknown subcommand {args[0]!r} ({_PENDING} land in later phases)")
         return 2
-    print(f"cosmos-cop {__version__} — serve|selfplay|replay|kill|compare|doctor|smoke-peer")
+    print(f"cosmos-cop {__version__} — serve|selfplay|replay|report|kill|compare|doctor|smoke-peer")
     return 0
 
 

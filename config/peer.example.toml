@@ -11,3 +11,17 @@ poll_seconds = 0.05
 reorder_window = 4
 queue_depth = 100
 handshake_budget_seconds = 60
+
+[trash_talk]
+provider = "template"   # template (0 tokens) | gemini
+every_n_steps = 3
+lie_rate = 0.75
+
+# Private mailbox policy. The token bucket's REFILL RATE derives from the signed
+# rate_limiter_gatekeeper.requests_per_minute in game.json; only the burst and the daily cap are
+# ours alone (see docs/DECISIONS.md ADR-004).
+[mail]
+burst_capacity = 5
+daily_cap = 20
+max_retries = 3
+backoff_base_seconds = 5

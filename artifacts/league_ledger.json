@@ -1,0 +1,7 @@
+{
+  "_schema": "rule-52 counted-game ledger: one counted series per opponent, advanced only by a settled counted run.",
+  "counted_games": {},
+  "counted_games_played": 0,
+  "max_games": 10,
+  "min_to_pass": 2
+}
