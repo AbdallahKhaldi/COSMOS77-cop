@@ -37,5 +37,6 @@ make lint      # ruff; zero violations policy
 | 2 | Engine: board physics, endings 46/47, scoring — 55 tests, 99% cov | done |
 | 3 | Strategy: solver (thief-win proof honored), tracker inversion, two-regime cop brain | done |
 | 4 | Protocol crypto: every kit vector replayed green; 4-layer audit; vendored protocol/ synced byte-exact | done |
-| 5 | MCP net: peer, receiver contract, state machine | next |
+| 5 | MCP net: 4 tools, at-least-once receiver, N00-N10 handshake, two-process smoke green | done |
+| 6 | Scent wiring + Gemini hints + liar-score | next |
 | 6–13 | Scent/hints → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |

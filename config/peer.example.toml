@@ -1,0 +1,13 @@
+# Copy to config/peer.toml (gitignored) and adjust per machine. Private, never negotiated,
+# never signed (App. B). When config/game.json exists, its values override any parallel key.
+
+[network]
+my_port = 8801
+opponent_url = "http://127.0.0.1:8802/mcp"
+turn_timeout_seconds = 30
+connect_timeout_seconds = 10
+watchdog_seconds = 60
+poll_seconds = 0.05
+reorder_window = 4
+queue_depth = 100
+handshake_budget_seconds = 60
