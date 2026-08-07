@@ -65,10 +65,11 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
       hashed canonical bytes, doubly-armed recipient gating with the lecturer alias appearing in
       exactly one module, rule-52 ledger (committed), five ADRs in `docs/DECISIONS.md`.
 
-## Phase 11 — deploy (next, NEEDS HUMAN)
-
-- [ ] `deploy/render.yaml`, `scripts/warmup.py`, `docs/DEPLOY.md` (cloudflared, 421 host-header,
-      loopback proof). Human: create the two Render services + env vars, install cloudflared.
+- [x] Phase 11 code side (2026-08-08): `deploy/render.yaml` (editable install, blank health path,
+      env vars), `scripts/warmup.py` (exits 0 ONLY on 406 — never on a 200), `docs/DEPLOY.md`
+      (status-code table, cloudflared 421 host-header fix, loopback proof, T-protocol).
+- [ ] **HUMAN**: create the two Render web services, set env vars, `brew install cloudflared`,
+      then confirm 406 on both `/mcp` URLs + a cross-machine F1 + `netcheck --loopback`.
 
 ## Phase 9–12 — GUI/replay · Gmail/Gatekeeper · deploy · console · README/tag
 
