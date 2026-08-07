@@ -10,8 +10,16 @@ from cosmos77_cop.engine.rules import (
     is_orthostep,
     legal_barrier_cells,
     legal_move_tokens,
+    token_between,
     validate_barrier_placement,
 )
+
+
+def test_token_between_inverts_destination():
+    for token in ["N", "S", "E", "W", "STAY"]:
+        assert token_between((3, 3), destination((3, 3), token)) == token
+    with pytest.raises(IllegalMoveError, match="not STAY or one orthogonal step"):
+        token_between((3, 3), (5, 5))
 
 
 def test_destinations_are_orthogonal_only():
