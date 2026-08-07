@@ -112,7 +112,7 @@ def test_compare_cmd_passes_and_reports(tmp_path, capsys):
 
 
 def test_kill_and_doctor_report_without_touching_the_network(capsys):
-    with patch("cosmos77_cop.commands.subprocess.run") as run:
+    with patch("cosmos77_cop.commands_ops.subprocess.run") as run:
         assert kill_cmd() == 0
         assert run.called
     assert "freed tcp:" in capsys.readouterr().out
@@ -137,9 +137,9 @@ def test_sibling_is_derived_from_our_directory_not_our_role():
 def test_zeroed_windows_never_report_a_green_series(tmp_path):
     """A settled technical-loss row is reportable, but a gate must not read it as a played game."""
 
-    from cosmos77_cop import commands
+    from cosmos77_cop import commands_play
     from cosmos77_cop.protocol.outcome import ZEROED
 
     assert "technical_loss" in ZEROED and "timeout" in ZEROED
-    source = inspect.getsource(commands.serve_cmd)
+    source = inspect.getsource(commands_play.serve_cmd)
     assert "zeroed" in source and "return 6" in source

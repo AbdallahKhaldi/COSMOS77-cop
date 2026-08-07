@@ -11,15 +11,14 @@ import time
 from pathlib import Path
 from typing import Any
 
-from ..crypto.step0 import build_step0
 from ..engine.config import GameConfig
 from ..net.client import PeerClient
 from ..net.server import KIND_NEGOTIATE, PeerInbox, build_server
 from ..protocol.ids import artifact_filenames, game_id
-from ..report.rows import row_from_report
 from .brainbridge import ROLE, BrainBridge
 from .gateway import Gateway
 from .peerconf import PeerConfig
+from .serieslog import sealed_step0, write_window_log
 from .turnloop import SubGameReport, play_sub_game
 from .turnstate import SideKit, fresh_state
 
@@ -131,54 +130,10 @@ class SeriesDriver:
         if self.view_attachment is not None:
             bridge.view_attachment = self.view_attachment
             self.view_attachment.attach(bridge, window)
-        step0 = self._sealed_step0(gateway, window)
+        step0 = sealed_step0(self, gateway.group_id, window)
         report = play_sub_game(gateway, state, kit, bridge, step0)
         self.reports.append(report)
         if self.peer_identity is None and gateway.peer_greeting is not None:
             self.peer_identity = gateway.peer_greeting
-        if self.writer is not None:
-            settlement = report.settlement
-            police_gid, thief_gid = self.window_roles(window)
-            my_gid = police_gid if ROLE == "police" else thief_gid
-            opp_gid = thief_gid if ROLE == "police" else police_gid
-            self.writer.write_log(
-                window,
-                summary={
-                    "result": report.result,
-                    "my_role": report.my_role,
-                    "steps": report.steps,
-                    "reason": report.reason,
-                    "settled": bool(settlement and settlement.settled),
-                    "log_verified": bool(settlement and settlement.log_verified),
-                    "tampered": bool(settlement and settlement.tampered),
-                    "tracker_trace": report.tracker_trace,
-                    "row": row_from_report(
-                        report,
-                        cfg=self.cfg,
-                        police_gid=police_gid,
-                        thief_gid=thief_gid,
-                        gid=self.gid,
-                        my_gid=my_gid,
-                        opp_gid=opp_gid,
-                        my_commit=self.code_version,
-                    ),
-                },
-                records=report.records,
-                opponent_records=report.opp_records,
-            )
+        write_window_log(self, window, report)
         return report
-
-    def _sealed_step0(self, gateway: Gateway, window: int) -> dict[str, Any]:
-        from ..crypto.nonce import new_nonce
-        from ..protocol.sealing import commit
-
-        payload = build_step0(
-            sub_game_number=window,
-            group_name=gateway.group_id,
-            model="gemini-2.5-flash",
-            code_version=self.code_version,
-            num_games_declared=self.num_games_declared,
-            spec=self.hardware,
-        )
-        nonce = new_nonce()
-        return {"payload": payload, "nonce": nonce, "commit": commit(payload, nonce)}

@@ -8,7 +8,8 @@ from ..net.messages import TurnMessage, now_iso
 from . import runtime
 from .gateway import Gateway
 from .subreport import SubGameReport, audit_phase, observe_batch
-from .turnactions import police_act, thief_act, thief_concede
+from .turnactions import police_act
+from .turnactions_thief import thief_act, thief_concede
 from .turnstate import SideKit, TurnState
 
 
