@@ -59,13 +59,16 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
       mirror swap (spawned a second peer of our own role) and a series of technical losses exited
       0 — both fixed and pinned.
 
-## Phase 10 — Gmail + Gatekeeper (next)
+- [x] Phase 10 (2026-08-08): send-only Gmail (scope-asserted, all I/O mocked), Gatekeeper
+      (daily quota + token bucket whose rate DERIVES from the signed requests_per_minute + DOS
+      lock + exponential 429 backoff), MIME whose body and attachment are byte-identical to the
+      hashed canonical bytes, doubly-armed recipient gating with the lecturer alias appearing in
+      exactly one module, rule-52 ledger (committed), five ADRs in `docs/DECISIONS.md`.
 
-- [ ] `report/gmail.py` send-only OAuth, body == attachment == hashed canonical bytes.
-- [ ] `report/gatekeeper.py` quota + token bucket + DOS lock + 429 backoff.
-- [ ] Recipient gating: lecturer address unreachable unless config counted=true AND --counted.
-- [ ] `docs/DECISIONS.md` ADRs (App-F#5 commit mail, friendly recipients, SHA-256 signatures,
-      rate_limits location).
+## Phase 11 — deploy (next, NEEDS HUMAN)
+
+- [ ] `deploy/render.yaml`, `scripts/warmup.py`, `docs/DEPLOY.md` (cloudflared, 421 host-header,
+      loopback proof). Human: create the two Render services + env vars, install cloudflared.
 
 ## Phase 9–12 — GUI/replay · Gmail/Gatekeeper · deploy · console · README/tag
 

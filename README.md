@@ -65,5 +65,6 @@ Regenerate: `uv run cosmos-cop selfplay --windows 1 --snapshots docs/img` and
 | 7 | Series driver: live turn loop, 6 windows, mutual audits, 14 kit-valid artifacts, selfplay 6/6 over real HTTP | done |
 | 8 | Sparring exam: 4 combos vs the kit peer — **90–30 ×3**, 45–45 in book mode, audits clean both sides, inversion measured 159/159 at offset 0 ([details](docs/SPARRING.md)) | done |
 | 9 | Live local-truth GUI + cryptographic replay viewer (screenshots above) | done |
-| 10 | Gmail reporting + Gatekeeper | next |
+| 10 | Gated Gmail reporting: send-only OAuth, Gatekeeper (quota/bucket/DOS/429), doubly-armed recipients, rule-52 ledger, [ADRs](docs/DECISIONS.md) | done |
+| 11 | Render + cloudflared deployment | next |
 | 6–13 | Scent/hints → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |

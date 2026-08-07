@@ -17,7 +17,7 @@ verbatim). Never advance on a red gate; never weaken a gate to pass it.
 | 7 | phase-7-series | PRD-7 | Six-window driver + counted-format artifacts | selfplay 6/6 settled; `check_artifacts.py` + `--terms` pass | ✅ 2026-08-07 |
 | 8 | phase-8-sparring | — | Interop exam vs kit sparring peer | 4 combos × both scent models green; thief survives; cop converts; tracker offset 0 | ✅ 2026-08-08 |
 | 9 | phase-9-ui | PRD-7 | Live GUI + replay viewer | live GUI in selfplay; replay Verified OK + TAMPERED on corruption | ✅ 2026-08-08 |
-| 10 | phase-10-report | PRD-7 | Gmail + Gatekeeper + counted reporting | byte-exact dry-run; gatekeeper matrix; armed-path proof | — |
+| 10 | phase-10-report | PRD-7 | Gmail + Gatekeeper + counted reporting | byte-exact dry-run; gatekeeper matrix; armed-path proof | ✅ 2026-08-08 |
 | 11 | phase-11-deploy | PRD-5 | Render + cloudflared runbooks | 406 on both services; cross-machine F1; loopback pass | — |
 | 11B | phase-11b-console | PRD-7 | Challenge Console + standing friendly | console-driven F1 vs sparring; bundle byte-match; web-cannot-arm | — |
 | 12 | phase-12-readme | — | Academic README, tag, submission pack | README checklists; docx filled; §6 checklist | — |

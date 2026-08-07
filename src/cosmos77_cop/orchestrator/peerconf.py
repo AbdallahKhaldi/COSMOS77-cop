@@ -29,6 +29,10 @@ class PeerConfig:
     trash_provider: str = "template"
     hint_every_n_steps: int = 3
     hint_lie_rate: float = 0.75
+    mail_burst_capacity: float = 5.0
+    mail_daily_cap: int = 20
+    mail_max_retries: int = 3
+    mail_backoff_base_s: float = 5.0
 
 
 def load_peer_config(path: str | Path | None) -> PeerConfig:
@@ -38,6 +42,7 @@ def load_peer_config(path: str | Path | None) -> PeerConfig:
         raw = tomllib.loads(Path(path).read_text(encoding="utf-8"))
     network = raw.get("network", {})
     trash = raw.get("trash_talk", {})
+    mail = raw.get("mail", {})
     cfg = PeerConfig(
         my_port=int(network.get("my_port", PeerConfig.my_port)),
         opponent_url=str(network.get("opponent_url", PeerConfig.opponent_url)),
@@ -55,6 +60,10 @@ def load_peer_config(path: str | Path | None) -> PeerConfig:
         trash_provider=str(trash.get("provider", PeerConfig.trash_provider)),
         hint_every_n_steps=int(trash.get("every_n_steps", PeerConfig.hint_every_n_steps)),
         hint_lie_rate=float(trash.get("lie_rate", PeerConfig.hint_lie_rate)),
+        mail_burst_capacity=float(mail.get("burst_capacity", PeerConfig.mail_burst_capacity)),
+        mail_daily_cap=int(mail.get("daily_cap", PeerConfig.mail_daily_cap)),
+        mail_max_retries=int(mail.get("max_retries", PeerConfig.mail_max_retries)),
+        mail_backoff_base_s=float(mail.get("backoff_base_seconds", PeerConfig.mail_backoff_base_s)),
     )
     reconcile_budgets(
         watchdog_s=cfg.watchdog_s,
