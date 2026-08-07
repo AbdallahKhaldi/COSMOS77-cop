@@ -23,12 +23,13 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
       (canonical/commit/divergent-forms/terms/uid/pheromone/consensus/locks/declarations/book-scent);
       `sync_protocol.py` trees byte-identical. 158 tests, 92% cov.
 
-## Phase 5 — net
-
-- [ ] Four MCP tools (`message`×3 + `payload` for submit_audit), validate→enqueue→`{"ok": True}`.
-- [ ] Receiver contract decision table; handshake refusals N00–N10; state machine + deadline +
-      watchdog; fault-injection ledger byte-equality; `make smoke` real.
-- [ ] Re-point `make kill` port at `config/peer.toml` once it exists (audit note from Phase 0).
+- [x] Phase 5 (2026-08-07): four MCP tools (ok:true, message/payload asymmetry), receiver
+      contract green vs the delivery_contract vector, handshake N00-N10 with bystander semantics,
+      state machine + one-clock deadline + watchdog, PeerClient (held session, reopen-once, hard
+      deadlines), probes (406=ready), peer.toml loader with budget reconciliation, and a REAL
+      two-process `make smoke`: handshake + one committed turn each way. 214/213 tests.
+- [ ] Phase 5 leftover: point `make kill` at `config/peer.toml` port (audit note from Phase 0) —
+      fold into Phase 7 CLI `kill`.
 
 ## Phase 6 — hints/scent · Phase 7 — series/artifacts · Phase 8 — sparring exam
 

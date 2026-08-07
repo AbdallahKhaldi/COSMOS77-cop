@@ -17,6 +17,7 @@ dependencies = [
     "google-api-python-client",
     "uvicorn",
     "psutil",
+    "httpx",
 ]
 
 [project.scripts]

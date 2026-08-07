@@ -13,13 +13,10 @@ test:
 lint:
 	uv run ruff check .
 
-# Two-process gate: launch this repo's peer and ../COSMOS77-thief's peer on localhost,
-# complete one handshake + one committed turn each, exit 0. Real from Phase 5 (net layer);
-# until then it fails honestly instead of lying green.
+# Two-process gate: this repo's peer + ../COSMOS77-thief's peer over real localhost HTTP,
+# full handshake + one committed turn each (no in-play reveal — nonces stay secret).
 smoke:
-	@echo "smoke: handshake + one committed turn vs ../COSMOS77-thief over localhost."
-	@echo "smoke: the net layer lands in Phase 5 — failing honestly until then."
-	@exit 2
+	uv run python scripts/smoke.py
 
 # Orphaned peers keep playing sub-games for you ("killing a shell does not kill what it
 # spawned" — playbook §7.17). Free our port between attempts.

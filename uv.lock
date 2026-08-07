@@ -183,6 +183,7 @@ dependencies = [
     { name = "google-auth" },
     { name = "google-auth-oauthlib" },
     { name = "google-genai" },
+    { name = "httpx" },
     { name = "psutil" },
     { name = "uvicorn" },
 ]
@@ -201,6 +202,7 @@ requires-dist = [
     { name = "google-auth" },
     { name = "google-auth-oauthlib" },
     { name = "google-genai" },
+    { name = "httpx" },
     { name = "psutil" },
     { name = "uvicorn" },
 ]
