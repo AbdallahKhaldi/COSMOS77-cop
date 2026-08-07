@@ -43,11 +43,20 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
       14 artifacts, kit check_artifacts ALL PASS incl. --terms uid derivation. CLI: serve,
       selfplay, kill, compare, doctor.
 
-## Phase 8 — sparring exam (next)
+- [x] Phase 8 (2026-08-08): sparring exam green — 4 combos over real HTTP, all 6/6 settled with
+      clean audits both sides and `check_artifacts` ALL PASS (+ cross-team join). Scores 90-30
+      (greedy both directions, random) and 47-47 (book model). Inversion MEASURED 159/159 at
+      offset 0. Three defects found and fixed: exact mode must be gated on the locked scent model
+      (a book-model peer's grid does not invert — cost us 30-90 before the fix), barrier cuts must
+      never seal the cop out of the thief's region, and barrier declarations pin the cop to five
+      cells. Duel regression frozen. Full record: `docs/SPARRING.md`.
 
-- [ ] 4 role/model combos vs kit sparring peer, `--hint-lang mixed`, `--turn-timeout 30`;
-      tracker offset 0 vs audit-revealed trail; freeze capture-rate regression; our thief must
-      survive the sparring cop; tune the building regime until our cop beats the sparring thief.
+## Phase 9 — GUI + replay viewer (next)
+
+- [ ] `gui/live.py` local-truth board (own position, known barriers, tracker posterior heatmap,
+      hint ticker, YOUR TURN/LOCKED banner) — never an objective board.
+- [ ] `replay/viewer.py` step fwd/back with per-step FULL commit recomputation -> Verified OK /
+      TAMPERED; screenshots incl. one DEGRADED/fuzzy heatmap.
 
 ## Phase 9–12 — GUI/replay · Gmail/Gatekeeper · deploy · console · README/tag
 

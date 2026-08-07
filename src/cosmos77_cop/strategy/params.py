@@ -16,3 +16,5 @@ class StrategyParams:
     claim_threshold: float = 0.9
     reserve_barriers: int = 2
     taboo_distance: int = 1
+    place_range: int = 3
+    cut_threshold: int = 4

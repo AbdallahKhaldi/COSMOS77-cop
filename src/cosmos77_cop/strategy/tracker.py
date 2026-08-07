@@ -28,8 +28,17 @@ def parse_grid(grid: dict[str, float]) -> dict[Coord, float]:
 class Tracker:
     """Consumes the opponent's transmitted smell grids and estimates its current cell."""
 
-    def __init__(self) -> None:
-        """Start with no observations (confidence ``fuzzy`` until a grid arrives)."""
+    def __init__(self, exact_capable: bool = True) -> None:
+        """Start with no observations (confidence ``fuzzy`` until a usable grid arrives).
+
+        ``exact_capable`` is False for every scent model but ``subtractive_chebyshev_v1``.
+        Only that model's wire form inverts to the emitter's own cell; measured against the
+        community kit, a book-model peer transmits a grid whose argmax wanders far from its
+        true position, so trusting it hands the brain a CONFIDENTLY WRONG cell — worse than
+        no information at all. Outside the subtractive model we stay fuzzy and let the
+        physics-constrained belief map lead.
+        """
+        self.exact_capable = exact_capable
         self.previous: dict[Coord, float] = {}
         self.cell: Coord | None = None
         self.confidence = FUZZY
@@ -37,7 +46,7 @@ class Tracker:
     def observe_grid(self, grid: dict[str, float]) -> None:
         """Ingest one received ``smell_grid``; empty means not-transmitted (stay fuzzy)."""
         cells = parse_grid(grid)
-        if not cells:
+        if not cells or not self.exact_capable:
             self.confidence = FUZZY
             return
         best = max(

@@ -135,6 +135,7 @@ def test_two_window_series_settles_with_clean_audits(tmp_path):
         my_gid=gid_a,
         my_identity={"group_name": gid_a, "members": [], "repos": {}, "mcp_servers": {}},
         peer_identity=driver.peer_identity,
+        expected_windows=2,
     )
     assert summary["settled"]
     result_path = tmp_path / "ours" / f"result_{driver.gid}.json"

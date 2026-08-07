@@ -21,8 +21,16 @@ def _serve(argv: list[str]) -> int:
     parser.add_argument("--gid-a", required=True)
     parser.add_argument("--gid-b", required=True)
     parser.add_argument("--windows", type=int, default=6)
+    parser.add_argument("--windows-spec", default=None, help="comma subset, e.g. 1,3,5")
+    parser.add_argument("--no-close", action="store_true")
     parser.add_argument("--out", required=True)
     parser.add_argument("--config", default="config/game.json")
+    parser.add_argument("--alternate-labels", action="store_true")
+    parser.add_argument(
+        "--scent-model",
+        default=None,
+        choices=["subtractive_chebyshev_v1", "multiplicative_book_v1"],
+    )
     args = parser.parse_args(argv)
     from cosmos77_cop.commands import serve_cmd
 
@@ -34,6 +42,10 @@ def _serve(argv: list[str]) -> int:
         windows=args.windows,
         out=args.out,
         config_path=args.config,
+        alternate_labels=args.alternate_labels,
+        scent_model=args.scent_model,
+        windows_spec=args.windows_spec,
+        close=not args.no_close,
     )
 
 

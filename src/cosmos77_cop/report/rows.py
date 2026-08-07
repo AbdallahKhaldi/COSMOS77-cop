@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from ..engine.config import GameConfig
-from ..orchestrator.series import window_groups
 from ..orchestrator.subreport import SubGameReport
 from ..protocol.consensus import consensus_scope, report_consensus_signature
 from ..protocol.ids import artifact_filenames
@@ -24,17 +23,16 @@ def row_from_report(
     report: SubGameReport,
     *,
     cfg: GameConfig,
-    gid_a: str,
-    gid_b: str,
+    police_gid: str,
+    thief_gid: str,
     gid: str,
     my_gid: str,
+    opp_gid: str,
     my_commit: str,
 ) -> dict[str, Any]:
     """One result row in the kit example shape."""
-    police_gid, thief_gid = window_groups(report.sub_game_number, gid_a, gid_b)
     settlement = report.settlement
     result = settlement.result if settlement and settlement.settled else report.result
-    opp_gid = gid_b if my_gid == gid_a else gid_a
     commits = {my_gid: my_commit}
     theirs = _their_commit(report)
     if theirs:

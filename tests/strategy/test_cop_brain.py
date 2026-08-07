@@ -54,15 +54,27 @@ def test_finite_value_within_budget_pursues_the_solver_line():
     assert after is not None and before is not None and after < before
 
 
-def test_building_regime_places_a_region_shrinking_barrier():
+def test_far_from_thief_herds_instead_of_wasting_barriers():
     b = Board(7)
-    cop, thief = (0, 0), (3, 3)
-    before = len(reachable_region(b, thief))
+    action = decide_exact(b, (0, 0), (1, 5), barriers_left=14, thief_moves_left=30, params=PARAMS)
+    assert action.kind == "move"
+
+
+def test_a_placement_that_seals_us_out_is_never_chosen():
+    b = Board(7)
+    for col in range(3, 7):
+        b.add_barrier((1, col))
+    cop, thief = (0, 2), (0, 4)
     action = decide_exact(b, cop, thief, barriers_left=14, thief_moves_left=30, params=PARAMS)
+    assert action.barrier_cell != (0, 3)
+
+
+def test_finite_placement_fires_even_at_reserve():
+    b = Board(7)
+    for cell in [(1, 4), (1, 5), (1, 6), (0, 4)]:
+        b.add_barrier(cell)
+    action = decide_exact(b, (0, 6), (0, 5), barriers_left=1, thief_moves_left=30, params=PARAMS)
     assert action.kind == "barrier"
-    trial = b.copy()
-    trial.add_barrier(action.barrier_cell)
-    assert len(reachable_region(trial, thief)) < before
 
 
 def test_reserve_barriers_block_building_placements():
@@ -102,3 +114,54 @@ def test_fuzzy_claim_only_at_threshold_and_co_location():
     unsure = {(1, 0): 0.6, (5, 5): 0.4}
     action = decide_fuzzy(Board(7), (0, 0), unsure, PARAMS)
     assert action.capture_claim is None
+
+
+def _greedy_evade(board: Board, thief, cop, exit_bonus=0.5):
+    """The kit sparring peer's GreedyEvade, reimplemented so the regression is self-contained."""
+    from cosmos77_cop.engine.rules import legal_move_tokens
+
+    def score(cell):
+        away = abs(cell[0] - cop[0]) + abs(cell[1] - cop[1])
+        return away + exit_bonus * len(board.open_neighbors(cell))
+
+    tokens = legal_move_tokens(board, thief)
+    ranked = sorted(tokens, key=lambda m: (-score(destination(thief, m)), m))
+    return destination(thief, ranked[0])
+
+
+def _duel(thief_start, max_moves=35, quota=14):
+    from cosmos77_cop.engine.capture import is_rule46, is_rule47_boxed
+
+    board = Board(7)
+    cop, thief = (0, 0), thief_start
+    left = quota
+    for move_no in range(1, max_moves + 1):
+        thief = _greedy_evade(board, thief, cop)
+        if thief == cop or is_rule47_boxed(board, thief):
+            return "capture", move_no, quota - left
+        action = decide_exact(
+            board, cop, thief, barriers_left=left, thief_moves_left=max_moves - move_no,
+            params=PARAMS,
+        )
+        if action.kind == "barrier":
+            board.add_barrier(action.barrier_cell)
+            left -= 1
+            assert left >= 0, "quota exceeded"
+            region = reachable_region(board, thief)
+            assert cop in region, "sealed ourselves out of the thief's region"
+            if is_rule46(action.barrier_cell, thief) or is_rule47_boxed(board, thief):
+                return "capture", move_no, quota - left
+        else:
+            cop = destination(cop, action.move_token)
+            if cop == thief:
+                return "capture", move_no, quota - left
+    return "survival", max_moves, quota - left
+
+
+@pytest.mark.parametrize("thief_start", [(3, 3), (6, 6), (0, 6), (5, 2), (2, 5)])
+def test_cop_converts_against_the_kit_greedy_evader(thief_start):
+    """Frozen Phase-8 regression: capture within budget, quota respected, never sealed out."""
+    outcome, moves, used = _duel(thief_start)
+    assert outcome == "capture", f"greedy evader survived from {thief_start}"
+    assert moves <= 25
+    assert used <= 14

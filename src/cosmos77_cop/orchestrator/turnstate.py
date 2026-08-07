@@ -16,7 +16,7 @@ from ..hints.gemini import HintMeter
 from ..hints.liar_score import LiarScore
 from ..hints.provider import HintProvider
 from ..strategy.tracker import Tracker
-from .scentflow import ScentFlow
+from .scentflow import SUBTRACTIVE, ScentFlow
 
 
 @dataclass
@@ -43,6 +43,7 @@ class TurnState:
     final_response: dict[str, Any] | None = None
     ending: Ending | None = None
     tokens_sub_game: int = 0
+    tracker_trace: list[list[int] | None] = field(default_factory=list)
 
     @property
     def over(self) -> bool:
@@ -79,13 +80,21 @@ class SideKit:
 
     @classmethod
     def fresh(
-        cls, cfg: GameConfig, role: str, *, seed: int, every_n: int = 1, lie_rate: float = 0.75
+        cls,
+        cfg: GameConfig,
+        role: str,
+        *,
+        seed: int,
+        every_n: int = 1,
+        lie_rate: float = 0.75,
+        scent_model: str | None = None,
     ) -> SideKit:
         """Build the standard kit for one sub-game (template hints; Gemini attaches later)."""
         meter = HintMeter()
+        model = scent_model or SUBTRACTIVE
         return cls(
-            flow=ScentFlow(cfg),
-            tracker=Tracker(),
+            flow=ScentFlow(cfg, model),
+            tracker=Tracker(exact_capable=model == SUBTRACTIVE),
             hints=HintProvider(
                 role=role,
                 arena=cfg.map_area,

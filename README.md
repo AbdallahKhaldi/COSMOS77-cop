@@ -40,5 +40,6 @@ make lint      # ruff; zero violations policy
 | 5 | MCP net: 4 tools, at-least-once receiver, N00-N10 handshake, two-process smoke green | done |
 | 6 | Scent pipeline (deposit-then-decay trail, argmax-stable wire), Gemini bluffs (metered, any-failure template fallback), liar-score | done |
 | 7 | Series driver: live turn loop, 6 windows, mutual audits, 14 kit-valid artifacts, selfplay 6/6 over real HTTP | done |
-| 8 | Sparring interop exam vs the community kit | next |
+| 8 | Sparring exam: 4 combos vs the kit peer — **90–30 ×3**, 45–45 in book mode, audits clean both sides, inversion measured 159/159 at offset 0 ([details](docs/SPARRING.md)) | done |
+| 9 | Live GUI + cryptographic replay viewer | next |
 | 6–13 | Scent/hints → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |

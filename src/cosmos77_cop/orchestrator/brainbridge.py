@@ -22,13 +22,14 @@ class BrainBridge:
         self.belief = BeliefMap(state.board, state.cfg.thief_start)
         self.my_last_claim: Coord | None = None
 
-    def note_opponent_turn(self, state: TurnState, kit: SideKit, hint: str) -> None:
+    def note_opponent_turn(self, state: TurnState, kit: SideKit, wire: dict) -> None:
         """Advance the belief one opponent move and fold in liar-weighted hint evidence.
 
         The factor maps the liar-score onto [0.5, 1.5]: a caught liar's claimed region is
         DISFAVORED, an honest opponent's favored, an uncalibrated one ignored.
         """
         self.belief.diffuse()
+        hint = str(wire.get("hint", ""))
         direction = hinted_direction(hint) if hint else None
         if direction is not None:
             grid = state.cfg.grid_size

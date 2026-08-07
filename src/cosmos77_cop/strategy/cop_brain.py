@@ -45,8 +45,8 @@ def _wall_affinity(board: Board, cell: Coord) -> int:
     return int(edge) + int(near_barrier)
 
 
-def _best_placement(board: Board, cop: Coord, thief: Coord) -> Coord | None:
-    """The region-shrinking placement, or None when no candidate makes progress."""
+def _best_placement(board: Board, cop: Coord, thief: Coord, min_cut: int) -> Coord | None:
+    """The best region-cutting placement, or None when no candidate cuts >= *min_cut* cells."""
     current = len(reachable_region(board, thief))
     best: tuple[tuple[int, int, int], Coord] | None = None
     for cell in legal_barrier_cells(board, cop):
@@ -54,14 +54,57 @@ def _best_placement(board: Board, cop: Coord, thief: Coord) -> Coord | None:
             continue
         trial = board.copy()
         trial.add_barrier(cell)
-        region = len(reachable_region(trial, thief))
-        if region >= current:
+        region_cells = reachable_region(trial, thief)
+        # Never wall ourselves OUT of the thief's region: a cut that separates the two
+        # components hands the thief a guaranteed survival, however much area it removes.
+        if cop not in region_cells:
+            continue
+        region = len(region_cells)
+        if current - region < min_cut:
             continue
         d = abs(cell[0] - thief[0]) + abs(cell[1] - thief[1])
         key = (region, -_wall_affinity(board, cell), d)
         if best is None or key < best[0]:
             best = (key, cell)
     return best[1] if best else None
+
+
+def _finite_placement(
+    board: Board, cop: Coord, thief: Coord, thief_moves_left: int
+) -> Coord | None:
+    """A placement that turns the solver value FINITE within budget — the constructed win."""
+    best: tuple[int, Coord] | None = None
+    for cell in legal_barrier_cells(board, cop):
+        if cell == thief:
+            continue
+        trial = board.copy()
+        trial.add_barrier(cell)
+        value = solver.steps_to_capture(trial, cop, thief, thief_to_move=True)
+        in_budget = value is not None and _plies_to_thief_moves(value) + 1 <= thief_moves_left
+        if in_budget and (best is None or value < best[0]):
+            best = (value, cell)
+    return best[1] if best else None
+
+
+def _herd_cell(board: Board, thief: Coord) -> Coord:
+    """The cell one step from the thief toward the board center.
+
+    Standing there pushes a distance-maximizing evader toward the walls and corners, which is
+    where barrier surgery converts.
+    """
+    center = (board.size // 2, board.size // 2)
+    gaps = (center[0] - thief[0], center[1] - thief[1])
+    if gaps == (0, 0):
+        return thief
+    axes = sorted((0, 1), key=lambda a: -abs(gaps[a]))
+    for axis in axes:
+        if gaps[axis] == 0:
+            continue
+        step = (1 if gaps[axis] > 0 else -1, 0) if axis == 0 else (0, 1 if gaps[axis] > 0 else -1)
+        cell = (thief[0] + step[0], thief[1] + step[1])
+        if board.is_open(cell):
+            return cell
+    return thief
 
 
 def _plies_to_thief_moves(plies: int) -> int:
@@ -86,11 +129,18 @@ def decide_exact(
         move = solver.best_cop_move(board, cop, thief)
         if move is not None:
             return _move(cop, token_between(cop, move[0]), thief)
-    if barriers_left > params.reserve_barriers:
-        placement = _best_placement(board, cop, thief)
+    if barriers_left >= 1:
+        winning = _finite_placement(board, cop, thief, thief_moves_left)
+        if winning is not None:
+            return CopAction("barrier", barrier_cell=winning)
+    near = abs(cop[0] - thief[0]) + abs(cop[1] - thief[1]) <= params.place_range
+    if barriers_left > params.reserve_barriers and near:
+        placement = _best_placement(board, cop, thief, params.cut_threshold)
         if placement is not None:
             return CopAction("barrier", barrier_cell=placement)
-    return _move(cop, _token_toward(board, cop, thief), thief)
+    target = _herd_cell(board, thief)
+    chase = target if target != cop else thief
+    return _move(cop, _token_toward(board, cop, chase), thief)
 
 
 def decide_fuzzy(

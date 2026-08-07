@@ -72,6 +72,7 @@ def observe_turn(state: TurnState, kit: SideKit, wire: dict[str, Any]) -> None:
     kit.flow.observe(message.smell_grid)
     kit.tracker.observe_grid(message.smell_grid)
     cell, confidence = kit.tracker.estimate()
+    state.tracker_trace.append([cell[0], cell[1]] if confidence == "exact" and cell else None)
     if message.hint and cell is not None and confidence == "exact":
         kit.liar.observe(message.hint, cell, state.cfg.grid_size)
     if message.barrier_placed is not None:
