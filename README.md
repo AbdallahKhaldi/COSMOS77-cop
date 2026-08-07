@@ -28,6 +28,29 @@ make test      # pytest; coverage ≥85% enforced
 make lint      # ruff; zero violations policy
 ```
 
+## Screenshots
+
+**Live view — local truth only (rules 8–9).** Our cell (green), the barriers we have seen
+declared, the scent field we perceive (blue), and our posterior over the opponent (red). The
+opponent's true position is never an input to this window; even when tracking is exact it appears
+as a belief of 1.0, which is an *inference* from the grid they transmitted.
+
+| Exact tracking (scent inversion) | Degraded / belief mode (`multiplicative_book_v1`) |
+|---|---|
+| <img src="docs/img/live_belief_exact.svg" width="430"> | <img src="docs/img/live_belief_degraded.svg" width="430"> |
+
+**Replay viewer — per-step verification (rule 20).** Every revealed record is re-hashed with the
+FULL sealed-payload construction `sha256(canonical_json(payload)\|nonce)`; the book's simplified
+`nonce\|move` sketch does not reproduce a real commit, and the viewer catches that too.
+
+| A clean log | The same log with one byte changed |
+|---|---|
+| <img src="docs/img/replay_verified.svg" width="430"> | <img src="docs/img/replay_tampered.svg" width="430"> |
+
+Regenerate: `uv run cosmos-cop selfplay --windows 1 --snapshots docs/img` and
+`uv run cosmos-cop replay <log.json> --screenshot docs/img`. The interactive Tk windows are
+`--gui` on `serve`/`selfplay` and the `replay` subcommand.
+
 ## Status
 
 | Phase | Deliverable | State |
@@ -41,5 +64,6 @@ make lint      # ruff; zero violations policy
 | 6 | Scent pipeline (deposit-then-decay trail, argmax-stable wire), Gemini bluffs (metered, any-failure template fallback), liar-score | done |
 | 7 | Series driver: live turn loop, 6 windows, mutual audits, 14 kit-valid artifacts, selfplay 6/6 over real HTTP | done |
 | 8 | Sparring exam: 4 combos vs the kit peer — **90–30 ×3**, 45–45 in book mode, audits clean both sides, inversion measured 159/159 at offset 0 ([details](docs/SPARRING.md)) | done |
-| 9 | Live GUI + cryptographic replay viewer | next |
+| 9 | Live local-truth GUI + cryptographic replay viewer (screenshots above) | done |
+| 10 | Gmail reporting + Gatekeeper | next |
 | 6–13 | Scent/hints → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |

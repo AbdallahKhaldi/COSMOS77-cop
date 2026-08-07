@@ -41,6 +41,9 @@ def observe_batch(state: TurnState, kit: SideKit, bridge: object, batch: list[di
         note = getattr(bridge, "note_opponent_turn", None)
         if note is not None:
             note(state, kit, wire)
+        view = getattr(bridge, "view_attachment", None)
+        if view is not None:
+            view.note_hint(str(wire.get("hint", "")))
         answer = wire.get("claim_response")
         if answer is not None and not answer.get("caught"):
             on_false = getattr(bridge, "note_claim_answered_false", None)

@@ -17,10 +17,19 @@ from .orchestrator.peerconf import load_peer_config
 from .orchestrator.runtime import start_server
 from .orchestrator.series import SeriesDriver
 from .protocol.ids import game_id, game_uid
+from .protocol.outcome import ZEROED
 from .protocol.terms import terms_from_config
 from .report.artifacts import ArtifactWriter
 from .report.compare import compare_files
 from .report.finish import finish_series
+
+# The sibling is derived from OUR OWN directory name, never from ROLE: the two repos are kept in
+# sync by a token swap, and a `ROLE == "police"` branch inverts under that swap — which silently
+# made selfplay spawn a second peer of our own role in our own directory (refused handshake, and
+# a series of technical losses). Deriving it this way is stable in both directions.
+OUR_REPO = Path(__file__).resolve().parents[2].name
+SIBLING_REPO = "COSMOS77-thief" if OUR_REPO == "COSMOS77-cop" else "COSMOS77-cop"
+SIBLING_TOOL = "cosmos-" + SIBLING_REPO.rsplit("-", 1)[-1]
 
 
 def _code_version() -> str:
@@ -43,6 +52,8 @@ def serve_cmd(
     scent_model: str | None = None,
     windows_spec: str | None = None,
     close: bool = True,
+    gui: bool = False,
+    snapshots: str | None = None,
 ) -> int:
     """Play this repo's fixed role through *windows* sub-games and write our artifact set."""
     cfg = load_game_config(config_path)
@@ -60,6 +71,15 @@ def serve_cmd(
         counted=False,
         reason="friendly",
     )
+    attachment = None
+    if gui or snapshots:
+        from .gui.attach import ViewAttachment
+        from .gui.live import LiveWindow
+
+        window = LiveWindow(f"cosmos77 {ROLE} — local truth") if gui else None
+        if window is not None:
+            window.open(cfg.grid_size)
+        attachment = ViewAttachment(window=window, snapshot_dir=snapshots)
     driver = SeriesDriver(
         game_cfg=cfg,
         peer_cfg=peer,
@@ -71,6 +91,7 @@ def serve_cmd(
         writer=writer,
         alternate_labels=alternate_labels,
         scent_model=scent_model,
+        view_attachment=attachment,
     )
     todo = (
         [int(w) for w in windows_spec.split(",")] if windows_spec else list(range(1, windows + 1))
@@ -100,13 +121,22 @@ def serve_cmd(
     finally:
         server.should_exit = True
         driver.client.close()
+    zeroed = [r.sub_game_number for r in driver.reports if r.result in ZEROED]
     print(f"series settled={summary['settled']} artifacts in {out}")
+    if zeroed:
+        # Kit exit-code convention: a settled TECHNICAL-LOSS row is reportable, but it is not a
+        # played game — a gate must never read green because six windows all died cleanly.
+        print(f"series had zeroed windows: {zeroed}")
+        return 6
     return 0 if summary["settled"] else 6
 
 
-def selfplay_cmd(*, out: str | None = None, windows: int = 6) -> int:
+def selfplay_cmd(
+    *, out: str | None = None, windows: int = 6, snapshots: str | None = None,
+    scent_model: str | None = None,
+) -> int:
     """Two-process practice series vs the sibling repo (playbook §0.1 — never in-process)."""
-    sibling = Path("..") / ("COSMOS77-thief" if ROLE == "police" else "COSMOS77-cop")
+    sibling = Path("..") / SIBLING_REPO
     if not sibling.is_dir():
         print("selfplay: sibling repo not found beside this one (use --dumb once implemented)")
         return 2
@@ -114,7 +144,7 @@ def selfplay_cmd(*, out: str | None = None, windows: int = 6) -> int:
     out_dir = out or f"runs/selfplay-{stamp}"
     gid_a, gid_b = GROUP_ID, f"{GROUP_ID}-mirror"
     my_port, their_port = (8801, 8802) if ROLE == "police" else (8802, 8801)
-    tool = "cosmos-thief" if ROLE == "police" else "cosmos-cop"
+    tool = SIBLING_TOOL
     env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
     peer_proc = subprocess.Popen(
         [
@@ -124,6 +154,7 @@ def selfplay_cmd(*, out: str | None = None, windows: int = 6) -> int:
             "--gid-a", gid_a, "--gid-b", gid_b,
             "--windows", str(windows),
             "--alternate-labels",
+            *(["--scent-model", scent_model] if scent_model else []),
             "--out", f"runs/selfplay-{stamp}",
         ],
         cwd=sibling,
@@ -138,6 +169,8 @@ def selfplay_cmd(*, out: str | None = None, windows: int = 6) -> int:
             windows=windows,
             out=out_dir,
             alternate_labels=True,
+            snapshots=snapshots,
+            scent_model=scent_model,
         )
     finally:
         peer_rc = peer_proc.wait(timeout=120)
@@ -179,8 +212,40 @@ def doctor_cmd() -> int:
     from .hints.gemini import load_env_key
 
     print(f"doctor: GEMINI_API_KEY {'present' if load_env_key() else 'ABSENT (template mode)'}")
-    sibling = Path("..") / ("COSMOS77-thief" if ROLE == "police" else "COSMOS77-cop")
+    sibling = Path("..") / SIBLING_REPO
     print(f"doctor: sibling repo {'present' if sibling.is_dir() else 'MISSING'}")
     for problem in problems:
         print(f"doctor: PROBLEM {problem}")
     return 1 if problems else 0
+
+
+def replay_cmd(
+    log_path: str, *, screenshot_dir: str | None = None, expect_clean: bool = False
+) -> int:
+    """Verify a log; optionally render SVG stamps; open the viewer when a display is available."""
+    from .replay.render import summary_line, write_step_svg
+    from .replay.verify import verify_log
+    from .replay.viewer import ReplayViewer
+
+    result = verify_log(log_path)
+    print(summary_line(result))
+    for verdict in result.failures[:5]:
+        print(f"  record {verdict.index + 1} (step {verdict.step}): {verdict.stamp}")
+    if screenshot_dir:
+        first = result.verdicts[0]
+        written = write_step_svg(result, first, Path(screenshot_dir) / "replay_verified.svg")
+        print(f"wrote {written}")
+        if result.failures:
+            bad = write_step_svg(
+                result, result.failures[0], Path(screenshot_dir) / "replay_tampered.svg"
+            )
+            print(f"wrote {bad}")
+    if expect_clean and not result.clean:
+        return 1
+    if os.environ.get("COSMOS_NO_GUI"):
+        return 0 if result.clean else 1
+    try:
+        return ReplayViewer(result).run()
+    except Exception as exc:  # a headless machine is not a verification failure
+        print(f"(viewer unavailable: {exc.__class__.__name__}; verification above stands)")
+        return 0 if result.clean else 1
