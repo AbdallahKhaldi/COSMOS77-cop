@@ -33,5 +33,6 @@ make lint      # ruff; zero violations policy
 | Phase | Deliverable | State |
 |---|---|---|
 | 0 | Bootstrap: repos, uv/py3.12 toolchain, league kit verified (113/113 vectors, clean 6/6 selfplay) | done |
-| 1 | Seven PRDs + PLAN + TODO (development story) | next |
-| 2–13 | Engine → solver/brains → protocol crypto → MCP net → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |
+| 1 | Seven PRDs + PLAN + TODO (development story) — see [`PRD/`](PRD/), [`PLAN.md`](PLAN.md), [`TODO.md`](TODO.md) | done |
+| 2 | Engine: board physics, endings 46/47, scoring | next |
+| 3–13 | Solver/brains → protocol crypto → MCP net → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |
