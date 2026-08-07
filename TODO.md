@@ -31,9 +31,14 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
 - [ ] Phase 5 leftover: point `make kill` at `config/peer.toml` port (audit note from Phase 0) —
       fold into Phase 7 CLI `kill`.
 
-## Phase 6 — hints/scent · Phase 7 — series/artifacts · Phase 8 — sparring exam
+- [x] Phase 6 (2026-08-07): ScentFlow (deposit-then-decay trail whose wire argmax is always the
+      emitter cell, min-center gating, receiver-side decay, {} for the book model); hint chain
+      (seeded bluff policy -> Gemini per cadence -> templates -> lint), 15-word cap, digit-free,
+      truthful intents, HintMeter per sub-game/series; liar-score calibration. 231/230 tests.
 
-- [ ] Per PRD-4 / PRD-7 acceptance lists; sparring gate: 4 role/model combos, `--hint-lang mixed`,
+## Phase 7 — series/artifacts · Phase 8 — sparring exam
+
+- [ ] Per PRD-7 acceptance list; sparring gate: 4 role/model combos, `--hint-lang mixed`,
       `--turn-timeout 30`, tracker offset 0 vs audit-revealed trail; freeze capture-rate regression.
 
 ## Phase 9–12 — GUI/replay · Gmail/Gatekeeper · deploy · console · README/tag

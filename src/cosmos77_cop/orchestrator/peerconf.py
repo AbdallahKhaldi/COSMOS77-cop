@@ -26,6 +26,9 @@ class PeerConfig:
     reorder_window: int = 4
     queue_depth: int = 100
     handshake_budget_s: float = 60.0
+    trash_provider: str = "template"
+    hint_every_n_steps: int = 3
+    hint_lie_rate: float = 0.75
 
 
 def load_peer_config(path: str | Path | None) -> PeerConfig:
@@ -34,6 +37,7 @@ def load_peer_config(path: str | Path | None) -> PeerConfig:
     if path is not None and Path(path).exists():
         raw = tomllib.loads(Path(path).read_text(encoding="utf-8"))
     network = raw.get("network", {})
+    trash = raw.get("trash_talk", {})
     cfg = PeerConfig(
         my_port=int(network.get("my_port", PeerConfig.my_port)),
         opponent_url=str(network.get("opponent_url", PeerConfig.opponent_url)),
@@ -48,6 +52,9 @@ def load_peer_config(path: str | Path | None) -> PeerConfig:
         handshake_budget_s=float(
             network.get("handshake_budget_seconds", PeerConfig.handshake_budget_s)
         ),
+        trash_provider=str(trash.get("provider", PeerConfig.trash_provider)),
+        hint_every_n_steps=int(trash.get("every_n_steps", PeerConfig.hint_every_n_steps)),
+        hint_lie_rate=float(trash.get("lie_rate", PeerConfig.hint_lie_rate)),
     )
     reconcile_budgets(
         watchdog_s=cfg.watchdog_s,
