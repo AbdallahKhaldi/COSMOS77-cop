@@ -31,6 +31,7 @@ class SubGameReport:
     their_audit_arrived: bool = False
     settlement: Settlement | None = None
     tokens: int = 0
+    tracker_trace: list[list[int] | None] = field(default_factory=list)
 
 
 def observe_batch(state: TurnState, kit: SideKit, bridge: object, batch: list[dict]) -> None:
@@ -39,7 +40,7 @@ def observe_batch(state: TurnState, kit: SideKit, bridge: object, batch: list[di
         observe_turn(state, kit, wire)
         note = getattr(bridge, "note_opponent_turn", None)
         if note is not None:
-            note(state, kit, str(wire.get("hint", "")))
+            note(state, kit, wire)
         answer = wire.get("claim_response")
         if answer is not None and not answer.get("caught"):
             on_false = getattr(bridge, "note_claim_answered_false", None)

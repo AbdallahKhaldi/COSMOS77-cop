@@ -16,6 +16,7 @@ from ..engine.config import GameConfig
 from ..net.client import PeerClient
 from ..net.server import KIND_NEGOTIATE, PeerInbox, build_server
 from ..protocol.ids import artifact_filenames, game_id
+from ..report.rows import row_from_report
 from .brainbridge import ROLE, BrainBridge
 from .gateway import Gateway
 from .peerconf import PeerConfig
@@ -57,6 +58,8 @@ class SeriesDriver:
         num_games_declared: int | None = None,
         hardware: dict[str, Any] | None = None,
         writer: object | None = None,
+        alternate_labels: bool = True,
+        scent_model: str | None = None,
     ) -> None:
         """One driver per process; the transport is built once and survives all windows."""
         self.cfg = game_cfg
@@ -73,10 +76,22 @@ class SeriesDriver:
         self.reports: list[SubGameReport] = []
         self.writer = writer
         self.peer_identity: dict[str, Any] | None = None
+        self.alternate_labels = alternate_labels
+        self.scent_model = scent_model
+
+    def window_roles(self, window: int) -> tuple[str, str]:
+        """(police_gid, thief_gid) for *window* under this series' topology.
+
+        Selfplay alternates the group labels (both processes are ours); against a REAL
+        opponent our group id is constant and only the fixture's role changes per window.
+        """
+        if self.alternate_labels:
+            return window_groups(window, self.gid_a, self.gid_b)
+        return (self.gid_a, self.gid_b) if ROLE == "police" else (self.gid_b, self.gid_a)
 
     def gateway_for(self, window: int) -> Gateway:
         """A fresh per-window gateway over the surviving transport."""
-        police_gid, thief_gid = window_groups(window, self.gid_a, self.gid_b)
+        police_gid, thief_gid = self.window_roles(window)
         my_gid = police_gid if ROLE == "police" else thief_gid
         opp_gid = thief_gid if ROLE == "police" else police_gid
         return Gateway(
@@ -89,6 +104,7 @@ class SeriesDriver:
             opponent_group_id=opp_gid,
             client=self.client,
             inbox=self.inbox,
+            scent_model=self.scent_model,
         )
 
     def play_window(self, window: int) -> SubGameReport:
@@ -107,6 +123,7 @@ class SeriesDriver:
             seed=1000 + window,
             every_n=self.peer_cfg.hint_every_n_steps,
             lie_rate=self.peer_cfg.hint_lie_rate,
+            scent_model=self.scent_model,
         )
         bridge = BrainBridge(state)
         step0 = self._sealed_step0(gateway, window)
@@ -116,6 +133,9 @@ class SeriesDriver:
             self.peer_identity = gateway.peer_greeting
         if self.writer is not None:
             settlement = report.settlement
+            police_gid, thief_gid = self.window_roles(window)
+            my_gid = police_gid if ROLE == "police" else thief_gid
+            opp_gid = thief_gid if ROLE == "police" else police_gid
             self.writer.write_log(
                 window,
                 summary={
@@ -126,6 +146,17 @@ class SeriesDriver:
                     "settled": bool(settlement and settlement.settled),
                     "log_verified": bool(settlement and settlement.log_verified),
                     "tampered": bool(settlement and settlement.tampered),
+                    "tracker_trace": report.tracker_trace,
+                    "row": row_from_report(
+                        report,
+                        cfg=self.cfg,
+                        police_gid=police_gid,
+                        thief_gid=thief_gid,
+                        gid=self.gid,
+                        my_gid=my_gid,
+                        opp_gid=opp_gid,
+                        my_commit=self.code_version,
+                    ),
                 },
                 records=report.records,
                 opponent_records=report.opp_records,

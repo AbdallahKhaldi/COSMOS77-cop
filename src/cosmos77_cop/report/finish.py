@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from ..net.messages import now_iso
@@ -42,6 +44,7 @@ def finish_series(
     my_gid: str,
     my_identity: dict[str, Any],
     peer_identity: dict[str, Any] | None,
+    expected_windows: int | None = None,
 ) -> dict[str, Any]:
     """Write configs + declaration always; the result ONLY when every window settled."""
     pair = sorted([driver.gid_a, driver.gid_b])
@@ -87,19 +90,39 @@ def finish_series(
     )
     writer.write_declaration(declaration)
 
-    rows = [
-        row_from_report(
+    own_rows: dict[int, dict[str, Any]] = {}
+    for r in driver.reports:
+        police_gid, thief_gid = driver.window_roles(r.sub_game_number)
+        own_rows[r.sub_game_number] = row_from_report(
             r,
             cfg=driver.cfg,
-            gid_a=driver.gid_a,
-            gid_b=driver.gid_b,
+            police_gid=police_gid,
+            thief_gid=thief_gid,
             gid=driver.gid,
             my_gid=my_gid,
+            opp_gid=opp_gid,
             my_commit=driver.code_version,
         )
-        for r in driver.reports
-    ]
-    summary: dict[str, Any] = {"rows": rows, "settled": all_settled(driver.reports)}
+    expected = expected_windows or driver.cfg.num_games
+    rows = []
+    settled = all_settled(driver.reports)
+    for window in range(1, expected + 1):
+        if window in own_rows:
+            rows.append(own_rows[window])
+            continue
+        log_path = Path(writer.out_dir) / artifact_filenames(driver.gid, window)["log"]
+        if not log_path.exists():
+            settled = False
+            continue
+        log = json.loads(log_path.read_text(encoding="utf-8"))
+        row = (log.get("summary") or {}).get("row")
+        if row is None or not (log.get("summary") or {}).get("settled"):
+            settled = False
+            continue
+        rows.append(row)
+    rows.sort(key=lambda r: r["sub_game_number"])
+    complete = settled and len(rows) == expected
+    summary: dict[str, Any] = {"rows": rows, "settled": complete}
     if summary["settled"] and rows:
         final = final_result_block(
             rows,

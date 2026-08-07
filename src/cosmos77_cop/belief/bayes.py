@@ -44,6 +44,12 @@ class BeliefMap:
         self.probs.pop(cell, None)
         self._normalize()
 
+    def condition_only(self, cells: set[Coord]) -> None:
+        """Hard evidence: the opponent is certainly inside *cells* (everything else is zeroed)."""
+        kept = {c: p for c, p in self.probs.items() if c in cells}
+        self.probs = kept or dict.fromkeys(cells, 1.0)
+        self._normalize()
+
     def condition_region(self, cells: set[Coord], factor: float) -> None:
         """Soft evidence: multiply the region's mass by *factor* (>1 favors, <1 disfavors)."""
         self.probs = {c: p * (factor if c in cells else 1.0) for c, p in self.probs.items()}

@@ -46,3 +46,19 @@ def test_parse_ignores_malformed_keys():
 
 def test_fresh_tracker_is_fuzzy():
     assert Tracker().estimate() == (None, FUZZY)
+
+
+def test_exact_mode_is_gated_on_the_subtractive_model():
+    """A book-model peer's grid does not invert to its own cell (measured vs the kit).
+
+    Trusting it would hand the brain a confidently WRONG position, so outside
+    ``subtractive_chebyshev_v1`` the tracker must stay fuzzy no matter what arrives.
+    """
+    gated = Tracker(exact_capable=False)
+    gated.observe_grid(synthetic_emission((5, 1)))
+    cell, confidence = gated.estimate()
+    assert confidence == FUZZY
+    assert cell is None
+    ungated = Tracker()
+    ungated.observe_grid(synthetic_emission((5, 1)))
+    assert ungated.estimate() == ((5, 1), EXACT)

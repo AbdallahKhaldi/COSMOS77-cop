@@ -12,7 +12,7 @@ from ..net.server import PeerInbox, build_server
 from ..orchestrator.machine import StateMachine
 from ..orchestrator.peerconf import PeerConfig
 from ..protocol.ids import game_uid
-from ..protocol.locks import OUR_LOCKS
+from ..protocol.locks import OUR_LOCKS, REGISTERED
 from ..protocol.terms import terms_from_config
 from . import identity
 from .deadline import DeadlineClock
@@ -33,6 +33,7 @@ class Gateway:
         opponent_group_id: str | None = None,
         client: PeerClient | None = None,
         inbox: PeerInbox | None = None,
+        scent_model: str | None = None,
     ) -> None:
         """Build every subsystem from validated config — nothing else constructs them."""
         self.game_cfg = game_cfg
@@ -63,6 +64,9 @@ class Gateway:
         self.pending_turns: list[dict[str, Any]] = []
         self.pending_audits: list[dict[str, Any]] = []
         self.pending_greetings: list[dict[str, Any]] = []
+        self.locks = dict(OUR_LOCKS)
+        if scent_model is not None:
+            self.locks["scent_model"] = REGISTERED[("scent_model", scent_model)]
         self.peer_greeting: dict[str, Any] | None = None
 
     def greeting(self, nonce: str) -> dict[str, Any]:
@@ -74,7 +78,7 @@ class Gateway:
             role=self.role,
             sub_game_number=self.sub_game_number,
             identity=self.identity,
-            locks=dict(OUR_LOCKS),
+            locks=dict(self.locks),
             game_uid=self.uid,
         )
 

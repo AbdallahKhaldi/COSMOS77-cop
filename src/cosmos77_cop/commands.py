@@ -39,6 +39,10 @@ def serve_cmd(
     windows: int,
     out: str,
     config_path: str = "config/game.json",
+    alternate_labels: bool = False,
+    scent_model: str | None = None,
+    windows_spec: str | None = None,
+    close: bool = True,
 ) -> int:
     """Play this repo's fixed role through *windows* sub-games and write our artifact set."""
     cfg = load_game_config(config_path)
@@ -65,22 +69,34 @@ def serve_cmd(
         code_version=_code_version(),
         hardware=hardware_spec(),
         writer=writer,
+        alternate_labels=alternate_labels,
+        scent_model=scent_model,
+    )
+    todo = (
+        [int(w) for w in windows_spec.split(",")] if windows_spec else list(range(1, windows + 1))
     )
     server = start_server(driver.mcp, port)
+    summary = {"settled": False}
     try:
-        for window in range(1, windows + 1):
+        for window in todo:
             report = driver.play_window(window)
             settled = bool(report.settlement and report.settlement.settled)
             print(f"g{window:02d} {ROLE}: {report.result} ({report.reason}) settled={settled}")
-        my_gid = GROUP_ID if GROUP_ID in (gid_a, gid_b) else gid_a
-        summary = finish_series(
-            driver,
-            writer,
-            raw_cfg=raw,
-            my_gid=my_gid,
-            my_identity=driver.gateway_for(1).identity,
-            peer_identity=driver.peer_identity,
-        )
+        if close:
+            my_gid = GROUP_ID if GROUP_ID in (gid_a, gid_b) else gid_a
+            summary = finish_series(
+                driver,
+                writer,
+                raw_cfg=raw,
+                my_gid=my_gid,
+                my_identity=driver.gateway_for(todo[0]).identity,
+                peer_identity=driver.peer_identity,
+                expected_windows=windows,
+            )
+        else:
+            summary = {"settled": all(
+                r.settlement is not None and r.settlement.settled for r in driver.reports
+            )}
     finally:
         server.should_exit = True
         driver.client.close()
@@ -107,6 +123,7 @@ def selfplay_cmd(*, out: str | None = None, windows: int = 6) -> int:
             "--peer-url", f"http://127.0.0.1:{my_port}/mcp",
             "--gid-a", gid_a, "--gid-b", gid_b,
             "--windows", str(windows),
+            "--alternate-labels",
             "--out", f"runs/selfplay-{stamp}",
         ],
         cwd=sibling,
@@ -120,6 +137,7 @@ def selfplay_cmd(*, out: str | None = None, windows: int = 6) -> int:
             gid_b=gid_b,
             windows=windows,
             out=out_dir,
+            alternate_labels=True,
         )
     finally:
         peer_rc = peer_proc.wait(timeout=120)

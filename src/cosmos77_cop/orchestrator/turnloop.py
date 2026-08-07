@@ -102,6 +102,7 @@ def play_sub_game(
         ended_at=now_iso(),
         records=list(gateway.records),
         tokens=kit.meter.total_series,
+        tracker_trace=list(state.tracker_trace),
     )
     if state.ending.result in ("capture", "survival"):
         audit_phase(gateway, state, bridge, report)
