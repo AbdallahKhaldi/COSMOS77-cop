@@ -36,5 +36,6 @@ make lint      # ruff; zero violations policy
 | 1 | Seven PRDs + PLAN + TODO (development story) — see [`PRD/`](PRD/), [`PLAN.md`](PLAN.md), [`TODO.md`](TODO.md) | done |
 | 2 | Engine: board physics, endings 46/47, scoring — 55 tests, 99% cov | done |
 | 3 | Strategy: solver (thief-win proof honored), tracker inversion, two-regime cop brain | done |
-| 4 | Protocol crypto: kit-conformant canonical/commit/audit | next |
-| 5–13 | MCP net → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |
+| 4 | Protocol crypto: every kit vector replayed green; 4-layer audit; vendored protocol/ synced byte-exact | done |
+| 5 | MCP net: peer, receiver contract, state machine | next |
+| 6–13 | Scent/hints → scent/hints → series driver → sparring → GUI/replay → Gmail → deploy → Challenge Console → academic README → league play | pending |
