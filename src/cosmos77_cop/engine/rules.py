@@ -40,6 +40,15 @@ def apply_move(board: Board, pos: Coord, token: str) -> Coord:
     return dest
 
 
+def token_between(src: Coord, dst: Coord) -> str:
+    """The move token taking *src* to *dst* (adjacent or equal); raise if no single step does."""
+    delta = (dst[0] - src[0], dst[1] - src[1])
+    for token, d in MOVE_DELTAS.items():
+        if d == delta:
+            return token
+    raise IllegalMoveError(f"{src}->{dst} is not STAY or one orthogonal step")
+
+
 def is_orthostep(src: Coord, dst: Coord) -> bool:
     """True when *src*→*dst* is a legal step shape: same cell or one orthogonal step.
 

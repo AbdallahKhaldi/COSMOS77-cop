@@ -12,13 +12,10 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
 - [x] Phase 2 (2026-08-07): `config/game.json` constitution + rule-12 loader (FIXED/MINIMUM),
       `engine/` board/rules/capture/subgame — 55 tests incl. rule-47 brute-force sweep, 99% cov.
 
-## Phase 3 — strategy (next)
-
-- [ ] Read HW6 `strategy/pursuit.py`; port retrograde technique (orthogonal + enlarged capture set).
-- [ ] `solver.py` <100 ms; empty-board ∞ check; trap conversion check.
-- [ ] `tracker.py` exact argmax + degraded Bayesian; role brain per PRD-3 acceptance list
-      (cop: two-regime barrier planner, reserve 2; thief: max-survival, distance-1 taboo,
-      rule-47 self-check + concession).
+- [x] Phase 3 (2026-08-07): retrograde solver ported from HW6 (orthogonal, barrier configs,
+      enlarged rule-46 capture set, boxed terminals; <100 ms, memoized); tracker exact argmax
+      inversion + fuzzy fallback; belief map; role brains (cop: two-regime barrier planner with
+      reserve + budget guards; thief: max-survival + taboo + rule-47 concession). 87/86 tests.
 
 ## Phase 4 — protocol
 
