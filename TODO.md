@@ -17,11 +17,11 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
       inversion + fuzzy fallback; belief map; role brains (cop: two-regime barrier planner with
       reserve + budget guards; thief: max-survival + taboo + rule-47 concession). 87/86 tests.
 
-## Phase 4 — protocol
-
-- [ ] Vendor `protocol/` (canonical/sealing/terms/ids/scent/outcome/consensus) + `crypto/`.
-- [ ] Copy kit vectors into `tests/vectors/`; conformance replay for every fixture.
-- [ ] `scripts/sync_protocol.py` + identity test (byte-equal trees in both repos).
+- [x] Phase 4 (2026-08-07): vendored `protocol/` (canonical, sealing, terms, ids, both scent
+      models, outcome, consensus, locks, pairing) + `crypto/` (nonce, step0, 4-layer audit,
+      corroboration, settlement); ALL applicable kit vectors replay green in both repos
+      (canonical/commit/divergent-forms/terms/uid/pheromone/consensus/locks/declarations/book-scent);
+      `sync_protocol.py` trees byte-identical. 158 tests, 92% cov.
 
 ## Phase 5 — net
 
