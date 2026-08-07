@@ -60,6 +60,7 @@ class SeriesDriver:
         writer: object | None = None,
         alternate_labels: bool = True,
         scent_model: str | None = None,
+        view_attachment: object | None = None,
     ) -> None:
         """One driver per process; the transport is built once and survives all windows."""
         self.cfg = game_cfg
@@ -78,6 +79,7 @@ class SeriesDriver:
         self.peer_identity: dict[str, Any] | None = None
         self.alternate_labels = alternate_labels
         self.scent_model = scent_model
+        self.view_attachment = view_attachment
 
     def window_roles(self, window: int) -> tuple[str, str]:
         """(police_gid, thief_gid) for *window* under this series' topology.
@@ -126,6 +128,9 @@ class SeriesDriver:
             scent_model=self.scent_model,
         )
         bridge = BrainBridge(state)
+        if self.view_attachment is not None:
+            bridge.view_attachment = self.view_attachment
+            self.view_attachment.attach(bridge, window)
         step0 = self._sealed_step0(gateway, window)
         report = play_sub_game(gateway, state, kit, bridge, step0)
         self.reports.append(report)

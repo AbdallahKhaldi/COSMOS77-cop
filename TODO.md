@@ -51,12 +51,21 @@ are mirrored in `../COSMOS77-thief/TODO.md`.
       never seal the cop out of the thief's region, and barrier declarations pin the cop to five
       cells. Duel regression frozen. Full record: `docs/SPARRING.md`.
 
-## Phase 9 — GUI + replay viewer (next)
+- [x] Phase 9 (2026-08-08): local-truth live view (pure render model + Tk window + dependency-free
+      SVG renderer), replay verification/viewer with per-step FULL commit recompute, `replay` and
+      `--gui`/`--snapshots` CLI. Screenshots committed under `docs/img` (exact + degraded heatmap,
+      Verified OK + TAMPERED). Legality pinned by tests: no GUI module can reach the rival's
+      position. Two live-ops bugs found by the gate: selfplay's sibling lookup inverted under the
+      mirror swap (spawned a second peer of our own role) and a series of technical losses exited
+      0 — both fixed and pinned.
 
-- [ ] `gui/live.py` local-truth board (own position, known barriers, tracker posterior heatmap,
-      hint ticker, YOUR TURN/LOCKED banner) — never an objective board.
-- [ ] `replay/viewer.py` step fwd/back with per-step FULL commit recomputation -> Verified OK /
-      TAMPERED; screenshots incl. one DEGRADED/fuzzy heatmap.
+## Phase 10 — Gmail + Gatekeeper (next)
+
+- [ ] `report/gmail.py` send-only OAuth, body == attachment == hashed canonical bytes.
+- [ ] `report/gatekeeper.py` quota + token bucket + DOS lock + 429 backoff.
+- [ ] Recipient gating: lecturer address unreachable unless config counted=true AND --counted.
+- [ ] `docs/DECISIONS.md` ADRs (App-F#5 commit mail, friendly recipients, SHA-256 signatures,
+      rate_limits location).
 
 ## Phase 9–12 — GUI/replay · Gmail/Gatekeeper · deploy · console · README/tag
 

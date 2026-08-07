@@ -11,7 +11,7 @@ import sys
 
 from cosmos77_cop import __version__
 
-_PENDING = "friendly|counted|replay|report"
+_PENDING = "friendly|counted|report"
 
 
 def _serve(argv: list[str]) -> int:
@@ -23,6 +23,8 @@ def _serve(argv: list[str]) -> int:
     parser.add_argument("--windows", type=int, default=6)
     parser.add_argument("--windows-spec", default=None, help="comma subset, e.g. 1,3,5")
     parser.add_argument("--no-close", action="store_true")
+    parser.add_argument("--gui", action="store_true")
+    parser.add_argument("--snapshots", default=None)
     parser.add_argument("--out", required=True)
     parser.add_argument("--config", default="config/game.json")
     parser.add_argument("--alternate-labels", action="store_true")
@@ -46,6 +48,8 @@ def _serve(argv: list[str]) -> int:
         scent_model=args.scent_model,
         windows_spec=args.windows_spec,
         close=not args.no_close,
+        gui=args.gui,
+        snapshots=args.snapshots,
     )
 
 
@@ -53,10 +57,19 @@ def _selfplay(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="cosmos-cop selfplay")
     parser.add_argument("--out", default=None)
     parser.add_argument("--windows", type=int, default=6)
+    parser.add_argument("--snapshots", default=None)
+    parser.add_argument(
+        "--scent-model",
+        default=None,
+        choices=["subtractive_chebyshev_v1", "multiplicative_book_v1"],
+    )
     args = parser.parse_args(argv)
     from cosmos77_cop.commands import selfplay_cmd
 
-    return selfplay_cmd(out=args.out, windows=args.windows)
+    return selfplay_cmd(
+        out=args.out, windows=args.windows, snapshots=args.snapshots,
+        scent_model=args.scent_model,
+    )
 
 
 def _smoke_peer(argv: list[str]) -> int:
@@ -71,6 +84,17 @@ def _smoke_peer(argv: list[str]) -> int:
     return run_smoke_peer(
         role=args.role, port=args.port, peer_url=args.peer_url, game_config_path=args.config
     )
+
+
+def _replay(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="cosmos-cop replay")
+    parser.add_argument("log")
+    parser.add_argument("--screenshot", default=None, help="directory for SVG stamps")
+    parser.add_argument("--expect-clean", action="store_true")
+    args = parser.parse_args(argv)
+    from cosmos77_cop.commands import replay_cmd
+
+    return replay_cmd(args.log, screenshot_dir=args.screenshot, expect_clean=args.expect_clean)
 
 
 def _compare(argv: list[str]) -> int:
@@ -94,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
         "selfplay": _selfplay,
         "smoke-peer": _smoke_peer,
         "compare": _compare,
+        "replay": _replay,
     }
     if args and args[0] in handlers:
         return handlers[args[0]](args[1:])
@@ -108,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     if args:
         print(f"cosmos-cop: unknown subcommand {args[0]!r} ({_PENDING} land in later phases)")
         return 2
-    print(f"cosmos-cop {__version__} — serve|selfplay|kill|compare|doctor|smoke-peer")
+    print(f"cosmos-cop {__version__} — serve|selfplay|replay|kill|compare|doctor|smoke-peer")
     return 0
 
 

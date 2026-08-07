@@ -12,6 +12,13 @@ from .turnactions import police_act, thief_act, thief_concede
 from .turnstate import SideKit, TurnState
 
 
+def _emit(bridge: object, state: TurnState, kit: SideKit, banner: str, step: int) -> None:
+    """Feed the live view, when one is attached (never a game-logic path)."""
+    sink = getattr(bridge, "on_view", None)
+    if sink is not None:
+        sink(state, kit, banner, step)
+
+
 def _send(gateway: Gateway, state: TurnState, record: dict, message: TurnMessage) -> bool:
     gateway.records.append(record)
     if not runtime.send_turn(gateway, message.to_wire()):
@@ -29,6 +36,7 @@ def _police_loop(gateway: Gateway, state: TurnState, kit: SideKit, bridge: objec
             state.finish("timeout", None, "opponent turn deadline expired")
             return
         observe_batch(state, kit, bridge, batch)
+        _emit(bridge, state, kit, "YOUR TURN", step + 1)
         if state.over:
             return
         step += 1
@@ -38,6 +46,7 @@ def _police_loop(gateway: Gateway, state: TurnState, kit: SideKit, bridge: objec
         )
         if not _send(gateway, state, record, message):
             return
+        _emit(bridge, state, kit, "LOCKED", step)
     if not state.over:
         state.finish("timeout", None, "step guard exhausted")
 
@@ -47,6 +56,7 @@ def _thief_loop(gateway: Gateway, state: TurnState, kit: SideKit, bridge: object
     guard = state.cfg.survival_threshold + 3
     while not state.over and step < guard:
         step += 1
+        _emit(bridge, state, kit, "YOUR TURN", step)
         concede_now = is_rule47_boxed(state.board, state.my_pos)
         action = None if concede_now else bridge.decide(state, kit)
         if concede_now or action.kind == "concede":
@@ -64,6 +74,7 @@ def _thief_loop(gateway: Gateway, state: TurnState, kit: SideKit, bridge: object
         )
         if not _send(gateway, state, record, message) or state.over:
             return
+        _emit(bridge, state, kit, "LOCKED", step)
         batch = runtime.await_applied(gateway, gateway.peer_cfg.turn_timeout_s)
         if not batch:
             state.finish("timeout", None, "opponent turn deadline expired")
