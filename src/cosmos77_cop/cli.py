@@ -1,8 +1,7 @@
-"""``cosmos-cop`` command-line entry point.
+"""``cosmos-cop`` command-line entry point (playbook §3 CLI surface).
 
-Full subcommands (serve | selfplay | friendly | counted | replay | report | doctor | compare |
-kill) land in Phase 7. ``smoke-peer`` is the Phase-5 two-process gate runtime driven by
-``make smoke``.
+Live: serve | selfplay | kill | compare | doctor | smoke-peer. Landing later: friendly/counted
+(Phase 10 arming), replay (Phase 9), report (Phase 10).
 """
 
 from __future__ import annotations
@@ -12,7 +11,40 @@ import sys
 
 from cosmos77_cop import __version__
 
-_SUBCOMMANDS = "serve|selfplay|friendly|counted|replay|report|doctor|compare|kill"
+_PENDING = "friendly|counted|replay|report"
+
+
+def _serve(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="cosmos-cop serve")
+    parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--peer-url", required=True)
+    parser.add_argument("--gid-a", required=True)
+    parser.add_argument("--gid-b", required=True)
+    parser.add_argument("--windows", type=int, default=6)
+    parser.add_argument("--out", required=True)
+    parser.add_argument("--config", default="config/game.json")
+    args = parser.parse_args(argv)
+    from cosmos77_cop.commands import serve_cmd
+
+    return serve_cmd(
+        port=args.port,
+        peer_url=args.peer_url,
+        gid_a=args.gid_a,
+        gid_b=args.gid_b,
+        windows=args.windows,
+        out=args.out,
+        config_path=args.config,
+    )
+
+
+def _selfplay(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="cosmos-cop selfplay")
+    parser.add_argument("--out", default=None)
+    parser.add_argument("--windows", type=int, default=6)
+    args = parser.parse_args(argv)
+    from cosmos77_cop.commands import selfplay_cmd
+
+    return selfplay_cmd(out=args.out, windows=args.windows)
 
 
 def _smoke_peer(argv: list[str]) -> int:
@@ -29,18 +61,42 @@ def _smoke_peer(argv: list[str]) -> int:
     )
 
 
+def _compare(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="cosmos-cop compare")
+    parser.add_argument("ours")
+    parser.add_argument("theirs")
+    args = parser.parse_args(argv)
+    from cosmos77_cop.commands import compare_cmd
+
+    return compare_cmd(args.ours, args.theirs)
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI and return a process exit code."""
     args = sys.argv[1:] if argv is None else argv
     if args and args[0] in {"--version", "version"}:
         print(f"cosmos-cop {__version__}")
         return 0
-    if args and args[0] == "smoke-peer":
-        return _smoke_peer(args[1:])
+    handlers = {
+        "serve": _serve,
+        "selfplay": _selfplay,
+        "smoke-peer": _smoke_peer,
+        "compare": _compare,
+    }
+    if args and args[0] in handlers:
+        return handlers[args[0]](args[1:])
+    if args and args[0] == "kill":
+        from cosmos77_cop.commands import kill_cmd
+
+        return kill_cmd()
+    if args and args[0] == "doctor":
+        from cosmos77_cop.commands import doctor_cmd
+
+        return doctor_cmd()
     if args:
-        print(f"cosmos-cop: unknown subcommand {args[0]!r} ({_SUBCOMMANDS} land in Phase 7)")
+        print(f"cosmos-cop: unknown subcommand {args[0]!r} ({_PENDING} land in later phases)")
         return 2
-    print(f"cosmos-cop {__version__} — subcommands ({_SUBCOMMANDS}) land in Phase 7")
+    print(f"cosmos-cop {__version__} — serve|selfplay|kill|compare|doctor|smoke-peer")
     return 0
 
 

@@ -14,7 +14,7 @@ verbatim). Never advance on a red gate; never weaken a gate to pass it.
 | 4 | phase-4-protocol | PRD-6 | Kit-conformant crypto + vendored protocol | ALL kit vectors green in both repos; sync identity test | ✅ 2026-08-07 |
 | 5 | phase-5-net | PRD-2 | MCP peer, receiver contract, state machine | fault-injection ledger byte-identical; `make smoke` green | ✅ 2026-08-07 |
 | 6 | phase-6-hints | PRD-4 | Scent wiring, Gemini hints, liar-score | seeded selfplay hints ≤15 words, 0 coordinates, intents true | ✅ 2026-08-07 |
-| 7 | phase-7-series | PRD-7 | Six-window driver + counted-format artifacts | selfplay 6/6 settled; `check_artifacts.py` + `--terms` pass | — |
+| 7 | phase-7-series | PRD-7 | Six-window driver + counted-format artifacts | selfplay 6/6 settled; `check_artifacts.py` + `--terms` pass | ✅ 2026-08-07 |
 | 8 | phase-8-sparring | — | Interop exam vs kit sparring peer | 4 combos × both scent models green; thief survives; cop converts; tracker offset 0 | — |
 | 9 | phase-9-ui | PRD-7 | Live GUI + replay viewer | live GUI in selfplay; replay Verified OK + TAMPERED on corruption | — |
 | 10 | phase-10-report | PRD-7 | Gmail + Gatekeeper + counted reporting | byte-exact dry-run; gatekeeper matrix; armed-path proof | — |

@@ -31,6 +31,8 @@ class Gateway:
         group_name: str,
         sub_game_number: int = 1,
         opponent_group_id: str | None = None,
+        client: PeerClient | None = None,
+        inbox: PeerInbox | None = None,
     ) -> None:
         """Build every subsystem from validated config — nothing else constructs them."""
         self.game_cfg = game_cfg
@@ -50,14 +52,18 @@ class Gateway:
             "repos": dict(identity.TEAM_REPOS),
             "members": list(identity.MEMBER_IDS),
         }
-        self.inbox = PeerInbox(peer_cfg.queue_depth)
+        self.inbox = inbox or PeerInbox(peer_cfg.queue_depth)
         self.mcp = build_server(self.inbox, f"cosmos77-{role}")
-        self.client = PeerClient(peer_cfg.opponent_url)
+        self.client = client or PeerClient(peer_cfg.opponent_url)
         self.receiver = Receiver(peer_cfg.reorder_window)
         self.machine = StateMachine()
         self.clock = DeadlineClock(0.0)
         self.records: list[dict[str, Any]] = []
         self.received_commits: dict[int, str] = {}
+        self.pending_turns: list[dict[str, Any]] = []
+        self.pending_audits: list[dict[str, Any]] = []
+        self.pending_greetings: list[dict[str, Any]] = []
+        self.peer_greeting: dict[str, Any] | None = None
 
     def greeting(self, nonce: str) -> dict[str, Any]:
         """Our negotiate message for this sub-game."""

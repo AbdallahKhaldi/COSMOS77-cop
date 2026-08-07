@@ -1,0 +1,146 @@
+"""Series completion: configs, declaration, result — or NOTHING when unsettled (rule 35)."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from ..net.messages import now_iso
+from ..orchestrator.series import SeriesDriver
+from ..protocol.ids import artifact_filenames
+from .artifacts import ArtifactWriter, sign_group_block
+from .rows import all_settled, final_result_block, mutual_agreement_block, row_from_report
+
+
+def _group_block(
+    gid: str,
+    identity: dict[str, Any],
+    hardware: dict[str, Any],
+    commit: str,
+    counted_played: int | None,
+) -> dict[str, Any]:
+    return sign_group_block(
+        {
+            "group_id": gid,
+            "group_name": identity.get("group_name", gid),
+            "members": identity.get("members", []),
+            "repos": identity.get("repos", {}),
+            "mcp_servers": identity.get("mcp_servers", {}),
+            "llm_model": identity.get("llm_model", "template"),
+            "hardware_spec": hardware,
+            "github_commit": commit,
+            "counted_games_played": counted_played,
+            "code_version": commit,
+        }
+    )
+
+
+def finish_series(
+    driver: SeriesDriver,
+    writer: ArtifactWriter,
+    *,
+    raw_cfg: dict[str, Any],
+    my_gid: str,
+    my_identity: dict[str, Any],
+    peer_identity: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Write configs + declaration always; the result ONLY when every window settled."""
+    pair = sorted([driver.gid_a, driver.gid_b])
+    locked = dict(raw_cfg)
+    locked["agreed_between"] = pair
+    for window in range(1, len(driver.reports) + 1):
+        writer.write_config(
+            window,
+            {**locked, "game_id": driver.gid, "game_uid": writer.uid, "sub_game_number": window},
+        )
+
+    theirs = peer_identity or {}
+    opp_gid = pair[1] if my_gid == pair[0] else pair[0]
+    their_hw = _peer_hardware(driver)
+    declaration = writer.base_envelope(
+        "Pre-game declaration: identity, members, repos, endpoints, hardware, truthful counts."
+    )
+    declaration.update(
+        {
+            "declaration_type": "pre_game_declaration",
+            "report_type": "declaration",
+            "timezone": "Asia/Jerusalem",
+            "game_started_at": driver.reports[0].started_at if driver.reports else now_iso(),
+            "num_sub_games": driver.cfg.num_games,
+            "max_tokens_per_game": 200000,
+            "groups": {
+                "group_1": _group_block(
+                    my_gid,
+                    my_identity,
+                    driver.hardware,
+                    driver.code_version,
+                    driver.num_games_declared,
+                ),
+                "group_2": _group_block(
+                    opp_gid,
+                    theirs.get("identity", {}) if isinstance(theirs, dict) else {},
+                    their_hw,
+                    _peer_commit(driver) or "unknown",
+                    None,
+                ),
+            },
+        }
+    )
+    writer.write_declaration(declaration)
+
+    rows = [
+        row_from_report(
+            r,
+            cfg=driver.cfg,
+            gid_a=driver.gid_a,
+            gid_b=driver.gid_b,
+            gid=driver.gid,
+            my_gid=my_gid,
+            my_commit=driver.code_version,
+        )
+        for r in driver.reports
+    ]
+    summary: dict[str, Any] = {"rows": rows, "settled": all_settled(driver.reports)}
+    if summary["settled"] and rows:
+        final = final_result_block(
+            rows,
+            cfg=driver.cfg,
+            gid_a=driver.gid_a,
+            gid_b=driver.gid_b,
+            counted=writer.league["counted"],
+        )
+        result = writer.base_envelope("Final series result - email the compact canonical bytes.")
+        result.update(
+            {
+                "report_type": "final_game_result",
+                "timezone": "Asia/Jerusalem",
+                "groups": pair,
+                "num_sub_games": driver.cfg.num_games,
+                "sub_games": rows,
+                "final_result": final,
+                "mutual_agreement": mutual_agreement_block(driver.gid, final, rows),
+            }
+        )
+        writer.write_result(result)
+        summary["final_result"] = final
+        summary["result_file"] = artifact_filenames(driver.gid)["result"]
+    return summary
+
+
+def _peer_hardware(driver: SeriesDriver) -> dict[str, Any]:
+    for report in driver.reports:
+        for record in report.opp_records:
+            payload = record.get("payload", {})
+            if payload.get("step") == 0 and isinstance(payload.get("spec"), dict):
+                return payload["spec"]
+    return {}
+
+
+def _peer_commit(driver: SeriesDriver) -> str | None:
+    for report in driver.reports:
+        for record in report.opp_records:
+            payload = record.get("payload", {})
+            if payload.get("step") == 0:
+                found = payload.get("github_commit") or payload.get("code_version")
+                if found:
+                    return str(found)
+    return None

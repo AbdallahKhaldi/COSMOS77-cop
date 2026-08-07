@@ -7,10 +7,7 @@ on the wire; nonces stay secret — there is no in-play reveal).
 
 from __future__ import annotations
 
-import threading
 import time
-
-import uvicorn
 
 from ..crypto.nonce import new_nonce
 from ..engine.config import load_game_config
@@ -22,17 +19,7 @@ from ..orchestrator.gateway import Gateway
 from ..orchestrator.peerconf import PeerConfig
 from ..protocol.scent import smell_emit
 from ..protocol.sealing import INTENT_TRUTH, VERDICT_MOVED, build_turn_payload, commit
-
-
-def _serve(gateway: Gateway, port: int) -> uvicorn.Server:
-    config = uvicorn.Config(
-        gateway.mcp.http_app(path="/mcp"), host="127.0.0.1", port=port, log_level="error"
-    )
-    server = uvicorn.Server(config)
-    threading.Thread(target=server.run, daemon=True).start()
-    while not server.started:
-        time.sleep(0.02)
-    return server
+from . import runtime
 
 
 def _route_turn(gateway: Gateway, message: dict) -> None:
@@ -116,7 +103,7 @@ def run_smoke_peer(*, role: str, port: int, peer_url: str, game_config_path: str
         group_id="cosmos77",
         group_name="cosmos77",
     )
-    server = _serve(gateway, port)
+    server = runtime.start_server(gateway.mcp, port)
     try:
         if not _handshake(gateway):
             return 4
