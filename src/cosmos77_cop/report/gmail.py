@@ -29,6 +29,7 @@ def has_credentials(root: str | Path = ".") -> bool:
 
 def load_credentials(root: str | Path = ".") -> object:
     """Load or refresh the send-only OAuth credentials (opens a browser on first run)."""
+    from google.auth.exceptions import RefreshError
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
@@ -40,9 +41,17 @@ def load_credentials(root: str | Path = ".") -> object:
         creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
     if creds and creds.valid:
         return creds
+    # A refresh CAN fail permanently: a Cloud project in Testing mode expires refresh tokens
+    # after ~7 days, and the failure arrives as invalid_grant. Re-consenting is the fix, so fall
+    # through to the browser flow instead of crashing a match-day report.
+    refreshed = False
     if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    else:
+        try:
+            creds.refresh(Request())
+            refreshed = True
+        except RefreshError:
+            print("gmail: stored token could not be refreshed (expired consent) — re-consenting")
+    if not refreshed:
         if not client_path.exists():
             raise GmailUnavailableError(f"{client_path} is missing (App. A step 4)")
         flow = InstalledAppFlow.from_client_secrets_file(str(client_path), SCOPES)

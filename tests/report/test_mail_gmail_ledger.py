@@ -1,6 +1,7 @@
 """MIME byte-fidelity (rules 33-34), the mocked send path (rule 30), and the rule-52 ledger."""
 
 import json
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -186,3 +187,29 @@ def test_report_cmd_refuses_a_half_armed_run(tmp_path, capsys):
     path.write_bytes(canonical_bytes(body) + b"\n")
     assert report_cmd(str(path), counted=False, dry_run=True) == 2
     assert "REFUSED" in capsys.readouterr().out
+
+
+def test_an_expired_consent_falls_back_to_re_consent_not_a_crash(tmp_path, monkeypatch, capsys):
+    """A Testing-mode project expires refresh tokens after ~7 days; that must not crash a
+    match-day report — it must re-consent."""
+    from google.auth.exceptions import RefreshError
+
+    from cosmos77_cop.report import gmail
+
+    (tmp_path / "credentials.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "token.json").write_text("{}", encoding="utf-8")
+    dead = MagicMock(valid=False, expired=True, refresh_token="r")
+    dead.refresh.side_effect = RefreshError("invalid_grant")
+    fresh = MagicMock(valid=True)
+    fresh.to_json.return_value = "{}"
+
+    creds_module = MagicMock()
+    creds_module.Credentials.from_authorized_user_file.return_value = dead
+    flow_module = MagicMock()
+    installed = flow_module.InstalledAppFlow.from_client_secrets_file.return_value
+    installed.run_local_server.return_value = fresh
+    monkeypatch.setitem(sys.modules, "google.oauth2.credentials", creds_module)
+    monkeypatch.setitem(sys.modules, "google_auth_oauthlib.flow", flow_module)
+
+    assert gmail.load_credentials(tmp_path) is fresh
+    assert "re-consenting" in capsys.readouterr().out
