@@ -1,7 +1,9 @@
 """``cosmos-cop`` command-line entry point (playbook §3 CLI surface).
 
-Live: serve | selfplay | kill | compare | doctor | smoke-peer. Landing later: friendly/counted
-(Phase 10 arming), replay (Phase 9), report (Phase 10).
+Live: serve | selfplay | pair | console | replay | report | kill | compare | doctor |
+smoke-peer. Counted is a doubly-armed POSTURE, not a subcommand: peer.toml [league]
+counted=true AND ``serve --counted`` (run side); result league.counted AND
+``report --counted`` (mail side).
 """
 
 from __future__ import annotations
@@ -10,11 +12,7 @@ import sys
 
 from cosmos77_cop import __version__
 
-from . import cli_args
-
-_PENDING = "friendly|counted"
-
-
+from . import cli_args, cli_pair
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,6 +29,7 @@ def main(argv: list[str] | None = None) -> int:
         "replay": cli_args.replay,
         "console": cli_args.console,
         "report": cli_args.report,
+        "pair": cli_pair.pair,
     }
     if args and args[0] in handlers:
         return handlers[args[0]](args[1:])
@@ -43,9 +42,9 @@ def main(argv: list[str] | None = None) -> int:
 
         return doctor_cmd()
     if args:
-        print(f"cosmos-cop: unknown subcommand {args[0]!r} ({_PENDING} land in later phases)")
+        print(f"cosmos-cop: unknown subcommand {args[0]!r}")
         return 2
-    live = "serve|selfplay|console|replay|report|kill|compare|doctor"
+    live = "serve|selfplay|pair|console|replay|report|kill|compare|doctor"
     print(f"cosmos-cop {__version__} — {live}")
     return 0
 

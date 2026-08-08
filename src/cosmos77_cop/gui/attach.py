@@ -22,17 +22,23 @@ class ViewAttachment:
         window: LiveWindow | None = None,
         snapshot_dir: str | Path | None = None,
         snapshot_steps: tuple[int, ...] = (1, 8, 20),
+        extra: object | None = None,
     ) -> None:
-        """Either or both sinks may be absent (then attaching is a no-op)."""
+        """Any of the sinks may be absent (all absent makes attaching a no-op).
+
+        *extra* is a duck-typed second window — anything with ``.update(view)``, e.g. the
+        JSONL :class:`~cosmos77_cop.gui.stream.EventSink` the hub viewer tails.
+        """
         self.window = window
         self.snapshot_dir = Path(snapshot_dir) if snapshot_dir else None
         self.snapshot_steps = snapshot_steps
+        self.extra = extra
         self.ticker = HintTicker()
         self.written: list[Path] = []
 
     def attach(self, bridge: object, sub_game: int) -> None:
         """Give *bridge* an ``on_view`` callback for this sub-game."""
-        if self.window is None and self.snapshot_dir is None:
+        if self.window is None and self.snapshot_dir is None and self.extra is None:
             return
 
         def on_view(state: object, kit: object, banner: str, step: int) -> None:
@@ -49,6 +55,8 @@ class ViewAttachment:
         view = _with_sub_game(view, sub_game)
         if self.window is not None:
             self.window.update(view)
+        if self.extra is not None:
+            self.extra.update(view)
         if self.snapshot_dir is not None and step in self.snapshot_steps:
             name = f"live_g{sub_game:02d}_step{step:02d}_{view.confidence}.svg"
             self.written.append(write_live_svg(view, self.snapshot_dir / name))

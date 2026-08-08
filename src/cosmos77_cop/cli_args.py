@@ -17,6 +17,13 @@ def serve(argv: list[str]) -> int:
     parser.add_argument("--no-close", action="store_true")
     parser.add_argument("--gui", action="store_true")
     parser.add_argument("--snapshots", default=None)
+    parser.add_argument(
+        "--counted", action="store_true",
+        help="run-side arming half; peer.toml [league] counted=true is the other half",
+    )
+    parser.add_argument(
+        "--events", action="store_true", help="append per-turn JSONL to <out>/events.jsonl"
+    )
     parser.add_argument("--out", required=True)
     parser.add_argument("--config", default="config/game.json")
     parser.add_argument("--alternate-labels", action="store_true")
@@ -42,6 +49,8 @@ def serve(argv: list[str]) -> int:
         close=not args.no_close,
         gui=args.gui,
         snapshots=args.snapshots,
+        counted=args.counted,
+        events=args.events,
     )
 
 
@@ -53,6 +62,9 @@ def selfplay(argv: list[str]) -> int:
     parser.add_argument("--snapshots", default=None)
     parser.add_argument("--gui", action="store_true", help="open the live window on both sides")
     parser.add_argument(
+        "--events", action="store_true", help="per-turn JSONL in both processes' run dirs"
+    )
+    parser.add_argument(
         "--scent-model",
         default=None,
         choices=["subtractive_chebyshev_v1", "multiplicative_book_v1"],
@@ -62,7 +74,7 @@ def selfplay(argv: list[str]) -> int:
 
     return selfplay_cmd(
         out=args.out, windows=args.windows, snapshots=args.snapshots,
-        scent_model=args.scent_model, gui=args.gui,
+        scent_model=args.scent_model, gui=args.gui, events=args.events,
     )
 
 

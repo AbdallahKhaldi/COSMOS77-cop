@@ -65,6 +65,7 @@ class Runner:
         """Bind to the repo whose CLI we shell out to."""
         self.repo = repo
         self.current: RunLog | None = None
+        self._process: subprocess.Popen[str] | None = None
 
     @property
     def busy(self) -> bool:
@@ -91,6 +92,7 @@ class Runner:
                 log.command, cwd=self.repo, env=env,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
             )
+            self._process = process
             for line in process.stdout or []:
                 stripped = line.rstrip()
                 if stripped and "authlib" not in stripped.lower():
@@ -101,6 +103,17 @@ class Runner:
             log.returncode = 1
         finally:
             log.running = False
+
+    def stop(self) -> None:
+        """Terminate the tracked run's process, then kill — the hub's stop-run primitive."""
+        process = self._process
+        if process is None or process.poll() is not None:
+            return
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
 
 
 def latest_result(repo: Path) -> dict[str, Any] | None:

@@ -46,6 +46,26 @@ def test_current_commit_and_dirty_flag(mock_run):
     assert not is_dirty()
 
 
+@patch("cosmos77_cop.crypto.step0.psutil")
+@patch("cosmos77_cop.crypto.step0.platform")
+def test_hub_hardware_desc_declares_the_machine_actually_playing(
+    mock_platform, mock_psutil, monkeypatch
+):
+    mock_platform.system.return_value = "Linux"
+    mock_platform.machine.return_value = "x86_64"
+    mock_psutil.cpu_count.return_value = 8
+    mock_psutil.cpu_freq.return_value = MagicMock(max=3000.0, current=2000.0)
+    mock_psutil.virtual_memory.return_value = MagicMock(total=8 * 2**30)
+    monkeypatch.setenv("HUB_HARDWARE_DESC", '{"cpu_cores": 2, "ram_gb": 1.0}')
+    spec = hardware_spec()
+    assert spec["cpu_cores"] == 2 and spec["ram_gb"] == 1.0
+    assert spec["os"] == "Linux"  # unoverridden fields keep the measured truth
+    monkeypatch.setenv("HUB_HARDWARE_DESC", "Railway shared vCPU container, 1GB RAM")
+    assert hardware_spec()["description"] == "Railway shared vCPU container, 1GB RAM"
+    monkeypatch.delenv("HUB_HARDWARE_DESC")
+    assert "description" not in hardware_spec()
+
+
 def test_step0_record_shape():
     record = build_step0(
         sub_game_number=3,

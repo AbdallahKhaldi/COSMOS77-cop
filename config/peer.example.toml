@@ -25,3 +25,10 @@ burst_capacity = 5
 daily_cap = 20
 max_retries = 3
 backoff_base_seconds = 5
+
+# Run-side counted arming (rules 37-38). PRIVATE posture: never negotiated, never signed,
+# never crosses the wire — the shared game.json (whose hash opponents agreed) stays untouched.
+# counted = true is HALF the arming; `serve --counted` on a local terminal is the other half.
+# Either half alone refuses to start. Web surfaces can never set the CLI half.
+[league]
+counted = false

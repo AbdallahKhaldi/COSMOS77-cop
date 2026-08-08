@@ -34,8 +34,13 @@ class Gateway:
         client: PeerClient | None = None,
         inbox: PeerInbox | None = None,
         scent_model: str | None = None,
+        counted_games_played: int | None = None,
     ) -> None:
-        """Build every subsystem from validated config — nothing else constructs them."""
+        """Build every subsystem from validated config — nothing else constructs them.
+
+        *counted_games_played* is the rule-37 truthful declaration (exclusive of this game);
+        when given it rides the greeting identity block.
+        """
         self.game_cfg = game_cfg
         self.peer_cfg = peer_cfg
         self.role = role
@@ -53,6 +58,8 @@ class Gateway:
             "repos": dict(identity.TEAM_REPOS),
             "members": list(identity.MEMBER_IDS),
         }
+        if counted_games_played is not None:
+            self.identity["counted_games_played"] = int(counted_games_played)
         self.inbox = inbox or PeerInbox(peer_cfg.queue_depth)
         self.mcp = build_server(self.inbox, f"cosmos77-{role}")
         self.client = client or PeerClient(peer_cfg.opponent_url)

@@ -6,6 +6,8 @@ extra key is safe — and rule 24 gates the computational-fairness bonus on a co
 
 from __future__ import annotations
 
+import json
+import os
 import platform
 import subprocess
 from typing import Any
@@ -13,8 +15,7 @@ from typing import Any
 import psutil
 
 
-def hardware_spec() -> dict[str, Any]:
-    """Real host hardware via ``platform`` + ``psutil`` (mocked in tests)."""
+def _measured_spec() -> dict[str, Any]:
     freq = psutil.cpu_freq()
     memory = psutil.virtual_memory()
     return {
@@ -26,6 +27,27 @@ def hardware_spec() -> dict[str, Any]:
         "gpu_type": "none",
         "vram_gb": 0.0,
     }
+
+
+def hardware_spec() -> dict[str, Any]:
+    """Real host hardware via ``platform`` + ``psutil`` (mocked in tests).
+
+    The machine actually playing must be the one declared (rule 24). Inside a hosted
+    container ``psutil`` sees the host kernel, so ``HUB_HARDWARE_DESC`` lets the operator
+    state the provisioned truth: a JSON object overlays the measured fields, any other
+    non-empty text is recorded as a ``description`` field. Unset = measured behavior.
+    """
+    spec = _measured_spec()
+    override = os.environ.get("HUB_HARDWARE_DESC", "").strip()
+    if not override:
+        return spec
+    try:
+        parsed = json.loads(override)
+    except ValueError:
+        parsed = None
+    if isinstance(parsed, dict):
+        return {**spec, **parsed}
+    return {**spec, "description": override}
 
 
 def current_commit(repo_root: str = ".") -> str:
