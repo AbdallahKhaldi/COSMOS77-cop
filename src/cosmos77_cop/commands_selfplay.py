@@ -19,7 +19,7 @@ from .repoinfo import SIBLING_REPO, SIBLING_TOOL
 
 def selfplay_cmd(
     *, out: str | None = None, windows: int = 6, snapshots: str | None = None,
-    scent_model: str | None = None,
+    scent_model: str | None = None, gui: bool = False,
 ) -> int:
     """Two-process practice series vs the sibling repo (playbook §0.1 — never in-process)."""
     sibling = Path("..") / SIBLING_REPO
@@ -41,6 +41,7 @@ def selfplay_cmd(
             "--windows", str(windows),
             "--alternate-labels",
             *(["--scent-model", scent_model] if scent_model else []),
+            *(["--gui"] if gui else []),
             "--out", f"runs/selfplay-{stamp}",
         ],
         cwd=sibling,
@@ -55,6 +56,7 @@ def selfplay_cmd(
             windows=windows,
             out=out_dir,
             alternate_labels=True,
+            gui=gui,
             snapshots=snapshots,
             scent_model=scent_model,
         )

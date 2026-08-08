@@ -1,0 +1,126 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>cosmos77 console</title><style>
+:root{--bg:#eceff3;--panel:#fff;--panel2:#f5f7f9;--ink:#151a21;--muted:#5c6875;--faint:#8b97a4;
+--line:#d7dee5;--pine:#166b50;--crimson:#b0272c;--ochre:#8f6314;
+--mono:ui-monospace,"SF Mono",Menlo,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1319;--panel:#161c24;--panel2:#1b222b;--ink:#e7edf3;
+--muted:#99a6b3;--faint:#6f7d8b;--line:#28313c;--pine:#48b78d;--crimson:#e2696d;--ochre:#d8a648}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6}
+.wrap{max-width:1060px;margin:0 auto;padding:32px 20px 80px;display:flex;flex-direction:column;gap:28px}
+h1{font-size:26px;margin:0;letter-spacing:-.02em}h2{font-size:17px;margin:0 0 12px;letter-spacing:-.01em}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 22px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.row{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:none}.row .lbl{flex:1;font-size:14.5px}.row .det{font-size:12.5px;color:var(--faint);font-family:var(--mono)}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;transform:translateY(-1px)}
+.dot.ok{background:var(--pine)}.dot.no{background:var(--ochre)}
+label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);
+color:var(--ink);font-family:var(--mono);font-size:13px}
+button{font-family:var(--sans);font-size:14px;font-weight:600;padding:9px 16px;border-radius:7px;
+border:1px solid var(--pine);background:var(--pine);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+pre{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:12px 14px;
+overflow-x:auto;font-family:var(--mono);font-size:12.4px;line-height:1.6;margin:0;max-height:340px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:500}
+td{font-family:var(--mono);font-size:12.5px}
+.warn{border-left:3px solid var(--ochre);background:color-mix(in srgb,var(--ochre) 12%,transparent);
+padding:11px 14px;border-radius:0 6px 6px 0;font-size:13.5px;margin-top:14px}
+.note{font-size:13.5px;color:var(--muted);margin:0}
+</style></head><body><div class="wrap">
+
+<div><div class="eyebrow" id="who">cosmos77 console</div><h1>Challenge console</h1>
+<p class="note">Local ops panel. Operational status only — never a game board; the live board is the
+desktop window, per the local-truth rule.</p></div>
+
+<div class="grid">
+  <div class="card"><h2>Readiness</h2><div id="ready"></div>
+    <div class="btns"><button class="ghost" onclick="load()">Refresh</button></div></div>
+  <div class="card"><h2>Practice &amp; friendlies</h2>
+    <label for="peer">Opponent MCP URL (blank = play our own sibling)</label>
+    <input id="peer" placeholder="https://their-host/mcp">
+    <label for="ogid">Their group id</label>
+    <input id="ogid" placeholder="their-group">
+    <div class="btns">
+      <button onclick="run('selfplay')">Selfplay x6</button>
+      <button onclick="run('f1')">F1 · 1 window</button>
+      <button onclick="run('f2')">F2 · 6 windows</button>
+      <button class="ghost" onclick="run('kill')">Kill ports</button>
+    </div>
+    <div class="warn"><b>Counted games are not here on purpose.</b> Arming needs the config flag and
+    <code>--counted</code> in a terminal, so no web click can reach the lecturer.</div>
+  </div>
+</div>
+
+<div class="card"><h2>Pairing packet</h2>
+  <p class="note">Fills in everything an opponent needs — including the <code>game_uid</code> they must
+  derive independently, which is the mismatch that stays invisible until reports are diffed.</p>
+  <div class="grid" style="margin-top:12px">
+    <div><label for="pgid">Their group id</label><input id="pgid" placeholder="team-name">
+      <label for="pcop">Their cop URL</label><input id="pcop" placeholder="https://.../mcp"></div>
+    <div><label for="pthief">Their thief URL</label><input id="pthief" placeholder="https://.../mcp">
+      <label for="pours">Our public base (optional)</label><input id="pours" placeholder="https://cosmos77.onrender.com/mcp"></div>
+  </div>
+  <div class="btns"><button onclick="pair()">Generate</button>
+    <button class="ghost" id="copy" onclick="copyMsg()" disabled>Copy message</button></div>
+  <div id="pairout" style="margin-top:16px"></div>
+</div>
+
+<div class="card"><h2>Run output</h2><pre id="log">idle</pre>
+  <div id="result" style="margin-top:14px"></div></div>
+
+</div><script>
+let msg="";
+async function load(){
+  const s=await (await fetch("/api/status")).json();
+  document.getElementById("who").textContent=s.repo+" console";
+  document.getElementById("ready").innerHTML=s.readiness.map(r=>
+    `<div class="row"><span class="dot ${r.ok?"ok":"no"}"></span><span class="lbl">${r.label}</span>
+     <span class="det">${r.detail}</span></div>`).join("");
+  if(s.result){document.getElementById("result").innerHTML=renderResult(s.result);}
+}
+function renderResult(r){
+  const rows=r.sub_games.map(g=>`<tr><td>${g.sub_game_number}</td><td>${g.result}</td>
+    <td>${Object.entries(g.score||{}).map(([k,v])=>k+" "+v).join(" · ")}</td>
+    <td>${g.audit&&g.audit.log_verified?"verified":"—"}</td></tr>`).join("");
+  const t=r.final_result.total_score||{};
+  return `<div class="eyebrow">last result · ${r.file}</div>
+    <table><tr><th>#</th><th>result</th><th>score</th><th>audit</th></tr>${rows}</table>
+    <p class="note" style="margin-top:8px">Total: ${Object.entries(t).map(([k,v])=>k+" "+v).join("  ·  ")}</p>`;
+}
+async function run(kind){
+  const body={kind,peer:document.getElementById("peer").value,opponent:document.getElementById("ogid").value};
+  const res=await fetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(data.error){document.getElementById("log").textContent=data.error;return;}
+  poll();
+}
+async function poll(){
+  const r=await (await fetch("/api/run")).json();
+  if(r.label){document.getElementById("log").textContent=
+    "$ "+r.command+"\\n\\n"+r.lines.join("\\n")+(r.running?"\\n…":"\\n\\nexit "+r.returncode);}
+  if(r.running){setTimeout(poll,900);}else{load();}
+}
+async function pair(){
+  const body={opponent:document.getElementById("pgid").value,
+    their_cop:document.getElementById("pcop").value,their_thief:document.getElementById("pthief").value,
+    ours:document.getElementById("pours").value};
+  const p=await (await fetch("/api/pair",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)})).json();
+  if(p.error){document.getElementById("pairout").textContent=p.error;return;}
+  msg=p.message;document.getElementById("copy").disabled=false;
+  const w=p.windows.map(x=>`<tr><td>${x.window}</td><td>${x.us}</td><td>${x.we_dial}</td><td>${x.they_dial}</td></tr>`).join("");
+  document.getElementById("pairout").innerHTML=
+   `<table><tr><th>window</th><th>we play</th><th>we dial</th><th>they dial</th></tr>${w}</table>
+    <p class="note" style="margin:12px 0 6px"><b>game_id</b> ${p.game_id} &nbsp;·&nbsp;
+    <b>game_uid</b> ${p.game_uid}</p><pre>${p.message.replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]))}</pre>`;
+}
+function copyMsg(){navigator.clipboard.writeText(msg);document.getElementById("copy").textContent="Copied";
+  setTimeout(()=>document.getElementById("copy").textContent="Copy message",1600);}
+load();poll();
+</script></body></html>

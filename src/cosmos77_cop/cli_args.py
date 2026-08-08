@@ -51,6 +51,7 @@ def selfplay(argv: list[str]) -> int:
     parser.add_argument("--out", default=None)
     parser.add_argument("--windows", type=int, default=6)
     parser.add_argument("--snapshots", default=None)
+    parser.add_argument("--gui", action="store_true", help="open the live window on both sides")
     parser.add_argument(
         "--scent-model",
         default=None,
@@ -61,7 +62,7 @@ def selfplay(argv: list[str]) -> int:
 
     return selfplay_cmd(
         out=args.out, windows=args.windows, snapshots=args.snapshots,
-        scent_model=args.scent_model,
+        scent_model=args.scent_model, gui=args.gui,
     )
 
 
@@ -102,6 +103,17 @@ def report(argv: list[str]) -> int:
     from cosmos77_cop.commands import report_cmd
 
     return report_cmd(args.result, counted=args.counted, dry_run=not args.send)
+
+
+def console(argv: list[str]) -> int:
+    """Parse ``console`` arguments and serve the local ops panel."""
+    parser = argparse.ArgumentParser(prog="cosmos-cop console")
+    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--no-browser", action="store_true")
+    args = parser.parse_args(argv)
+    from cosmos77_cop.console.server import run_console
+
+    return run_console(".", port=args.port, open_browser=not args.no_browser)
 
 
 def compare(argv: list[str]) -> int:
