@@ -6,6 +6,7 @@ import dataclasses
 import json
 from pathlib import Path
 
+from .arming import ArmingError, declared_count, serve_posture
 from .crypto.step0 import hardware_spec
 from .engine.config import load_game_config
 from .orchestrator.brainbridge import ROLE
@@ -36,13 +37,25 @@ def serve_cmd(
     close: bool = True,
     gui: bool = False,
     snapshots: str | None = None,
+    counted: bool = False,
+    events: bool = False,
 ) -> int:
-    """Play this repo's fixed role through *windows* sub-games and write our artifact set."""
+    """Play this repo's fixed role through *windows* sub-games and write our artifact set.
+
+    Counted is doubly armed and PRIVATE: ``config/peer.toml [league] counted`` AND
+    ``--counted`` together, or the run refuses to start (the shared constitution never
+    carries it). ``--events`` appends one JSON line per view to ``<out>/events.jsonl``.
+    """
     cfg = load_game_config(config_path)
     raw = json.loads(Path(config_path).read_text(encoding="utf-8"))
     peer = dataclasses.replace(
         load_peer_config("config/peer.toml"), my_port=port, opponent_url=peer_url
     )
+    try:
+        posture = serve_posture(config_counted=peer.league_counted, cli_counted=counted)
+    except ArmingError as exc:
+        print(f"serve: REFUSED — {exc} (peer.toml [league] counted AND serve --counted)")
+        return 2
     gid = game_id(gid_a, gid_b)
     uid = game_uid(terms_from_config(raw), gid_a, gid_b)
     writer = ArtifactWriter(
@@ -50,18 +63,20 @@ def serve_cmd(
         gid=gid,
         uid=uid,
         github={gid_a: dict(TEAM_REPOS), gid_b: dict(TEAM_REPOS)},
-        counted=False,
-        reason="friendly",
+        counted=posture.counted,
+        reason=posture.label,
     )
     attachment = None
-    if gui or snapshots:
+    if gui or snapshots or events:
         from .gui.attach import ViewAttachment
         from .gui.live import LiveWindow
+        from .gui.stream import EventSink
 
         window = LiveWindow(f"cosmos77 {ROLE} — local truth") if gui else None
         if window is not None:
             window.open(cfg.grid_size)
-        attachment = ViewAttachment(window=window, snapshot_dir=snapshots)
+        sink = EventSink(out) if events else None
+        attachment = ViewAttachment(window=window, snapshot_dir=snapshots, extra=sink)
     driver = SeriesDriver(
         game_cfg=cfg,
         peer_cfg=peer,
@@ -69,6 +84,7 @@ def serve_cmd(
         gid_b=gid_b,
         out_dir=out,
         code_version=code_version(),
+        num_games_declared=declared_count(),
         hardware=hardware_spec(),
         writer=writer,
         alternate_labels=alternate_labels,

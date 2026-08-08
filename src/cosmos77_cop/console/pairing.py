@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from ..orchestrator.identity import TEAM_REPOS
 from ..protocol.canonical import canonical_hash
 from ..protocol.ids import game_id, game_uid
 from ..protocol.locks import OUR_LOCKS
@@ -88,8 +89,8 @@ def build_packet(
 
 IDENTITY
   group_id: cosmos77 · members: Tasneem Natour, Abdallah Khaldi
-  repos:  cop   https://github.com/AbdallahKhaldi/COSMOS77-cop
-          thief https://github.com/AbdallahKhaldi/COSMOS77-thief
+  repos:  cop   {TEAM_REPOS['cop']}
+          thief {TEAM_REPOS['thief']}
   MCP:    cop   {our_cop}
           thief {our_thief}
   wire shape: reference-v3 ({OUR_LOCKS['wire_shape']})

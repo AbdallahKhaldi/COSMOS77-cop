@@ -106,6 +106,7 @@ class SeriesDriver:
             client=self.client,
             inbox=self.inbox,
             scent_model=self.scent_model,
+            counted_games_played=self.num_games_declared,
         )
 
     def play_window(self, window: int) -> SubGameReport:

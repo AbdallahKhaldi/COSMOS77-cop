@@ -1,7 +1,11 @@
 """The console: correct pairing derivations, and the rails that keep it legal."""
 
 import json
+import subprocess
+import time
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
@@ -73,6 +77,52 @@ def test_buttons_map_to_safe_commands():
     assert f2[f2.index("--windows") + 1] == "6"
     _, blank_peer = build_command(REPO, "f2", "", "them")
     assert "selfplay" in blank_peer, "no peer URL must never dial a stranger"
+
+
+class FakeProc:
+    """A Popen stand-in: exits cleanly for the pump, resists terminate until killed."""
+
+    def __init__(self):
+        self.stdout = iter(["one line of output\n"])
+        self.actions = []
+
+    def wait(self, timeout=None):
+        if timeout is None:
+            return 0
+        raise subprocess.TimeoutExpired(cmd="fake", timeout=timeout)
+
+    def poll(self):
+        return None
+
+    def terminate(self):
+        self.actions.append("terminate")
+
+    def kill(self):
+        self.actions.append("kill")
+
+
+def test_runner_tracks_its_process_and_stop_terminates_then_kills(tmp_path):
+    fake = FakeProc()
+    with patch("cosmos77_cop.console.state.subprocess.Popen", return_value=fake):
+        runner = Runner(tmp_path)
+        log = runner.start("demo", ["a-command"])
+        for _ in range(500):
+            if not log.running:
+                break
+            time.sleep(0.01)
+    assert not log.running and log.returncode == 0
+    assert runner._process is fake, "the hub's stop primitive needs the tracked handle"
+    runner.stop()
+    assert fake.actions == ["terminate", "kill"]
+
+
+def test_stop_without_a_live_process_is_a_quiet_noop(tmp_path):
+    runner = Runner(tmp_path)
+    runner.stop()  # nothing was ever started
+    def boom():
+        raise AssertionError("terminate must not be reached after exit")
+    runner._process = SimpleNamespace(poll=lambda: 0, terminate=boom)
+    runner.stop()  # already exited — nothing to signal
 
 
 def test_page_shows_operations_only_never_a_board():

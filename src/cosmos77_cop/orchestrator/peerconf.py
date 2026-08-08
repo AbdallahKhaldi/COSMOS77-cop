@@ -33,6 +33,7 @@ class PeerConfig:
     mail_daily_cap: int = 20
     mail_max_retries: int = 3
     mail_backoff_base_s: float = 5.0
+    league_counted: bool = False
 
 
 def load_peer_config(path: str | Path | None) -> PeerConfig:
@@ -43,6 +44,7 @@ def load_peer_config(path: str | Path | None) -> PeerConfig:
     network = raw.get("network", {})
     trash = raw.get("trash_talk", {})
     mail = raw.get("mail", {})
+    league = raw.get("league", {})
     cfg = PeerConfig(
         my_port=int(network.get("my_port", PeerConfig.my_port)),
         opponent_url=str(network.get("opponent_url", PeerConfig.opponent_url)),
@@ -64,6 +66,7 @@ def load_peer_config(path: str | Path | None) -> PeerConfig:
         mail_daily_cap=int(mail.get("daily_cap", PeerConfig.mail_daily_cap)),
         mail_max_retries=int(mail.get("max_retries", PeerConfig.mail_max_retries)),
         mail_backoff_base_s=float(mail.get("backoff_base_seconds", PeerConfig.mail_backoff_base_s)),
+        league_counted=bool(league.get("counted", PeerConfig.league_counted)),
     )
     reconcile_budgets(
         watchdog_s=cfg.watchdog_s,
