@@ -253,7 +253,8 @@ make lint                                 # ruff, zero-violation policy
 make smoke                                # two real processes: handshake + one committed turn
 
 uv run cosmos-cop selfplay                # full 6-window series vs the sibling repo (two processes)
-uv run cosmos-cop selfplay --gui          # ...with the live local-truth window
+uv run cosmos-cop selfplay --gui          # ...with the live window on BOTH agents
+uv run cosmos-cop console                 # local ops panel in your browser (pairing, runs, status)
 uv run cosmos-cop replay <log.json>       # step through, Verified OK / TAMPERED per record
 uv run cosmos-cop report <result.json>    # dry run by default; --counted --send to arm
 uv run cosmos-cop compare ours.json theirs.json    # the report-compare ritual
@@ -303,7 +304,7 @@ hardcoded tunables · type hints and docstrings on public symbols · determinist
 | 8 | Sparring exam vs the community kit — 90–30 ×3, audits clean both sides | done |
 | 9–10 | Local-truth GUI + replay verification · gated Gmail + Gatekeeper | done |
 | 11 | Deploy artifacts (Render blueprint, warm-up, runbook) | code done; deploy pending |
-| 11B | Challenge Console (plug-and-play pairing) | pending |
+| 11B | Challenge console — local ops panel: readiness, one-click friendlies, pairing-packet generator | done |
 | 12 | Academic report (this file) + submission pack | done |
 | 13 | League: friendlies → counted series vs real opponents | pending |
 

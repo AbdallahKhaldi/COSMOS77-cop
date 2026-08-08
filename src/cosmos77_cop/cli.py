@@ -29,6 +29,7 @@ def main(argv: list[str] | None = None) -> int:
         "smoke-peer": cli_args.smoke_peer,
         "compare": cli_args.compare,
         "replay": cli_args.replay,
+        "console": cli_args.console,
         "report": cli_args.report,
     }
     if args and args[0] in handlers:
@@ -44,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
     if args:
         print(f"cosmos-cop: unknown subcommand {args[0]!r} ({_PENDING} land in later phases)")
         return 2
-    live = "serve|selfplay|replay|report|kill|compare|doctor|smoke-peer"
+    live = "serve|selfplay|console|replay|report|kill|compare|doctor"
     print(f"cosmos-cop {__version__} — {live}")
     return 0
 
