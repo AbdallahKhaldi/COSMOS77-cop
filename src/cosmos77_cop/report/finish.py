@@ -108,6 +108,9 @@ def finish_series(
             gid_a=driver.gid_a,
             gid_b=driver.gid_b,
             counted=writer.league["counted"],
+            my_gid=my_gid,
+            num_games_declared=driver.num_games_declared,
+            first_meeting=getattr(driver, "first_meeting", True),
         )
         result = writer.base_envelope("Final series result - email the compact canonical bytes.")
         result.update(

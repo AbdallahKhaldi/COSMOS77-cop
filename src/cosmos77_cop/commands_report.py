@@ -1,11 +1,41 @@
-"""The ``report`` command: dry-run by default, doubly armed to reach the lecturer."""
+"""The ``report`` command: dry-run by default, doubly armed to reach the lecturer.
+
+A CONFIRMED counted send is the one event that advances the rule-52 ledger — friendlies
+and dry runs never touch it (rules 37-38: the ledger is the evidence behind every count
+we declare, and a discarded attempt sent no report and wrote no ledger entry).
+"""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from .orchestrator.peerconf import load_peer_config
+
+
+def _advance_ledger(body: dict[str, Any], root: str) -> int:
+    """Advance the rule-52 ledger by the counted send that just succeeded."""
+    from .net.messages import now_iso
+    from .orchestrator.identity import GROUP_ID
+    from .report.ledger import LEDGER_FILE, Ledger, LedgerError
+
+    rows = body.get("sub_games") or []
+    opponent = next((str(g) for g in body.get("groups") or [] if g != GROUP_ID), "unknown")
+    ledger = Ledger.load(Path(root) / LEDGER_FILE)
+    try:
+        ledger.record(
+            opponent=opponent,
+            game_id=str(body.get("game_id", "unknown")),
+            game_uid=str(body.get("game_uid", "unknown")),
+            won=(body.get("final_result") or {}).get("winner_group") == GROUP_ID,
+            settled_at=str(rows[-1].get("ended_at") or now_iso()) if rows else now_iso(),
+        )
+    except LedgerError as exc:
+        print(f"report: LEDGER ERROR — {exc}; reconcile {LEDGER_FILE} by hand before anything else")
+        return 1
+    print(f"report: rule-52 ledger advanced to {ledger.counted_games_played} — commit it")
+    return 0
 
 
 def report_cmd(
@@ -63,4 +93,6 @@ def report_cmd(
         backoff_base=peer.mail_backoff_base_s,
     )
     print(f"report: sent id={response.get('id')} (gatekeeper {ALLOW})")
+    if posture.counted:
+        return _advance_ledger(body, root)
     return 0

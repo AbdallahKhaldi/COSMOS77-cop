@@ -145,3 +145,17 @@ def test_two_window_series_settles_with_clean_audits(tmp_path):
     assert compare_results(result, result) == []
     scores = {tuple(sorted(r["score"].values())) for r in result["sub_games"]}
     assert scores <= {(5, 20), (5, 10)}
+    # Rule 49: the peer's gid maps to the repos THEY declared in their greeting — never
+    # invented for them. The stub greets with this repo's identity constants.
+    from cosmos77_cop.orchestrator.identity import TEAM_REPOS
+
+    assert result["links"]["github"] == {"cosmos77-mirror": dict(TEAM_REPOS)}
+
+
+def test_seed_github_never_claims_our_repos_for_a_real_opponent():
+    from cosmos77_cop.commands_play import seed_github
+    from cosmos77_cop.orchestrator.identity import TEAM_REPOS
+
+    assert seed_github("cosmos77", "rival", selfplay=False) == {"cosmos77": dict(TEAM_REPOS)}
+    both = seed_github("cosmos77", "cosmos77-mirror", selfplay=True)
+    assert set(both) == {"cosmos77", "cosmos77-mirror"}

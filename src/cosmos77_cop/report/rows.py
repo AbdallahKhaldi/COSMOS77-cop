@@ -59,20 +59,34 @@ def row_from_report(
 
 
 def final_result_block(
-    rows: list[dict[str, Any]], *, cfg: GameConfig, gid_a: str, gid_b: str, counted: bool
+    rows: list[dict[str, Any]],
+    *,
+    cfg: GameConfig,
+    gid_a: str,
+    gid_b: str,
+    counted: bool,
+    my_gid: str | None = None,
+    num_games_declared: int | None = None,
+    first_meeting: bool = True,
 ) -> dict[str, Any]:
-    """The derived aggregate + league fields (disarmed on friendlies, rules 37-38)."""
+    """The derived aggregate + league fields (disarmed on friendlies, rules 37-38).
+
+    ``games_played_including_this``: OUR count is the declaration's exclusive ledger count
+    + 1 (the §2.10 identity); the OPPONENT'S is null — never fabricated (kit SPEC §6.2,
+    "null is not 0/1"). ``first_meeting_between_groups`` is the rule-52 ledger's answer.
+    """
     groups = sorted([gid_a, gid_b])
     agg = apply_series_tie_rule(aggregate(rows, groups), cfg.scoring["tie_score"])
     tokens = {g: sum(int(r["tokens"].get(g, 0)) for r in rows) for g in groups}
     winner = agg["winner_group"]
+    counts: dict[str, int | None] = dict.fromkeys(groups)
+    if counted and my_gid in counts:
+        counts[my_gid] = int(num_games_declared or 0) + 1
     return {
         **agg,
         "tokens_total_series": tokens,
-        "games_played_including_this": (
-            {g: 1 for g in groups} if counted else dict.fromkeys(groups)
-        ),
-        "first_meeting_between_groups": True,
+        "games_played_including_this": counts,
+        "first_meeting_between_groups": bool(first_meeting),
         "diversity_reward_applied": {g: bool(counted and g == winner) for g in groups},
     }
 

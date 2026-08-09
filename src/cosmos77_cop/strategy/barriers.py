@@ -27,9 +27,17 @@ def wall_affinity(board: Board, cell: Coord) -> int:
 
 
 def best_placement(board: Board, cop: Coord, thief: Coord, min_cut: int) -> Coord | None:
-    """The best region-cutting placement, or None when no candidate cuts >= *min_cut* cells."""
+    """The best region-cutting placement, falling back to wall PROGRESS below *min_cut*.
+
+    One barrier on the bare 2-connected grid removes exactly one reachable cell, so a
+    >=min_cut admission gate can never admit a FIRST wall — the regime would be dead code
+    (playbook §4.3: never gate building on an unreachable first step). A candidate cutting
+    >= min_cut still wins outright; otherwise the best cut >= 1 is accepted, ranked by
+    (smallest remaining region, wall/edge affinity, closeness to the thief) — the
+    corner-herding progress metric. The seal-out guard is unconditional.
+    """
     current = len(reachable_region(board, thief))
-    best: tuple[tuple[int, int, int], Coord] | None = None
+    best: tuple[tuple[int, int, int, int], Coord] | None = None
     for cell in legal_barrier_cells(board, cop):
         if cell == thief:
             continue
@@ -41,10 +49,10 @@ def best_placement(board: Board, cop: Coord, thief: Coord, min_cut: int) -> Coor
         if cop not in region_cells:
             continue
         region = len(region_cells)
-        if current - region < min_cut:
+        if current - region < 1:
             continue
         d = abs(cell[0] - thief[0]) + abs(cell[1] - thief[1])
-        key = (region, -wall_affinity(board, cell), d)
+        key = (int(current - region < min_cut), region, -wall_affinity(board, cell), d)
         if best is None or key < best[0]:
             best = (key, cell)
     return best[1] if best else None

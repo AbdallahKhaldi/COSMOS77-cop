@@ -165,3 +165,68 @@ def test_cop_converts_against_the_kit_greedy_evader(thief_start):
     assert outcome == "capture", f"greedy evader survived from {thief_start}"
     assert moves <= 25
     assert used <= 14
+
+
+def _solver_evade(board: Board, thief, cop):
+    """A distance-keeping solver thief (the audit's probe): survives any wall-less cop."""
+    from cosmos77_cop.strategy.solver import best_thief_move
+
+    dest, _ = best_thief_move(board, cop, thief)
+    return dest if dest is not None else thief
+
+
+def test_building_regime_fires_from_a_bare_board():
+    """Playbook §4.3: the first wall must never be gated on an unreachable cut threshold."""
+    action = decide_exact(
+        Board(7), (3, 4), (3, 2), barriers_left=14, thief_moves_left=30, params=PARAMS
+    )
+    assert action.kind == "barrier", "cop must start building against a distance-keeper"
+
+
+def _solver_duel(thief_start, max_moves=35, quota=14):
+    board = Board(7)
+    cop, thief = (0, 0), thief_start
+    left = quota
+    placed = 0
+    for move_no in range(1, max_moves + 1):
+        thief = _solver_evade(board, thief, cop)
+        if thief == cop or is_rule47_boxed_(board, thief):
+            return "capture", move_no, placed
+        action = decide_exact(
+            board, cop, thief, barriers_left=left, thief_moves_left=max_moves - move_no,
+            params=PARAMS,
+        )
+        if action.kind == "barrier":
+            board.add_barrier(action.barrier_cell)
+            left -= 1
+            placed += 1
+            assert left >= 0, "quota exceeded"
+            region = reachable_region(board, thief)
+            assert cop in region, "sealed ourselves out of the thief's region"
+            from cosmos77_cop.engine.capture import is_rule46
+
+            if is_rule46(action.barrier_cell, thief) or is_rule47_boxed_(board, thief):
+                return "capture", move_no, placed
+        else:
+            cop = destination(cop, action.move_token)
+            if cop == thief:
+                return "capture", move_no, placed
+    return "survival", max_moves, placed
+
+
+def is_rule47_boxed_(board, thief):
+    from cosmos77_cop.engine.capture import is_rule47_boxed
+
+    return is_rule47_boxed(board, thief)
+
+
+@pytest.mark.parametrize(
+    ("thief_start", "converts"), [((3, 3), False), ((6, 6), True), ((2, 5), True)]
+)
+def test_cop_genuinely_builds_walls_against_a_distance_keeping_thief(thief_start, converts):
+    """Re-frozen Phase-8 regression: vs the solver evader the cop must actually place walls
+    (it previously placed 0/35 and lost every such duel — the audit's dead-regime finding)."""
+    outcome, _moves, placed = _solver_duel(thief_start)
+    assert placed >= 3, f"cop placed only {placed} barriers vs solver thief from {thief_start}"
+    if converts:
+        assert outcome == "capture", f"cop no longer converts the solver thief from {thief_start}"

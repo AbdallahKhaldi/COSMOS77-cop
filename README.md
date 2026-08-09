@@ -76,7 +76,7 @@ Exact inversion is a property of *that* model, not of scent in general. Against 
 `multiplicative_book_v1` peer the grid still arrives but does **not** invert: its true cell sat
 still for six turns while our argmax wandered across the board. Trusting it handed our brain a
 *confidently wrong* position and cost us a series 30–90. We now gate exact mode on the pair-locked
-scent model, and the same matchup settles 45–45.
+scent model, and the same matchup settles 47–47 (45–45 before the series_add tie bonus).
 
 A confidently wrong observation is worse than a declared unknown. That is the single most useful
 thing this project taught us, and it is [ADR-005](docs/DECISIONS.md).
@@ -272,8 +272,8 @@ uv run python scripts/sparring_exam.py --label demo    # a full series vs the co
 uv run python scripts/calibrate_tracker.py <run_dir>   # tracker offset vs revealed trails
 ```
 
-Deployment (Render for availability, local + cloudflared for every counted run):
-**[docs/DEPLOY.md](docs/DEPLOY.md)**.
+Deployment (counted runs execute on the always-on Railway hub, SSH-armed — ADR-006; Render
+and local + cloudflared stay warm backups): **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 
 ## 7. League ledger
 
@@ -286,15 +286,16 @@ counted series per opponent (rule 52), advanced only by a settled counted run, n
 | — | _no counted game played yet_ | | | | | | |
 
 Practice results against the community kit's independent peer are in
-[docs/SPARRING.md](docs/SPARRING.md): 90–30 in three of four configurations, 45–45 in the degraded
-one, every window settled with clean audits on both sides.
+[docs/SPARRING.md](docs/SPARRING.md): 90–30 in three of four configurations, 47–47 in the degraded
+one (45–45 before the declared series_add tie bonus), every window settled with clean audits on
+both sides.
 
 ## 8. Development story and interpretation records
 
 - [`PRD/`](PRD/) — the seven product requirement documents, one per build stage (rule 50)
 - [`PLAN.md`](PLAN.md) — the phase map, each phase with its verification gate
 - [`TODO.md`](TODO.md) — the living checklist, including what remains for a human
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — five ADRs where the sources conflict and we had to choose
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — seven ADRs where the sources conflict (or the facts moved) and we had to choose
 - [`docs/SPARRING.md`](docs/SPARRING.md) — the measured interop exam, including the three defects it caught
 
 Engineering constraints held throughout: uv only · TDD with **all** LLM, MCP, network and Gmail I/O

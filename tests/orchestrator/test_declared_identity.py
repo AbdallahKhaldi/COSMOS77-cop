@@ -33,3 +33,11 @@ def test_series_driver_threads_the_count_into_every_window(tmp_path):
     )
     assert driver.gateway_for(1).identity["counted_games_played"] == 3
     assert driver.gateway_for(2).identity["counted_games_played"] == 3
+
+
+def test_public_mcp_url_env_overrides_the_loopback_identity(monkeypatch):
+    public = "https://cosmos77-arena-production.up.railway.app/cop/mcp"
+    monkeypatch.setenv("COSMOS_PUBLIC_MCP_URL", public)
+    assert gateway().identity["mcp_servers"]["self"] == public
+    monkeypatch.delenv("COSMOS_PUBLIC_MCP_URL")
+    assert gateway().identity["mcp_servers"]["self"].startswith("http://127.0.0.1:")
