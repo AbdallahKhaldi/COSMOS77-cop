@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from ..engine.board import Board, Coord
 from ..engine.rules import legal_barrier_cells
-from . import solver
+from . import jitter, solver
 from .pathing import reachable_region
 
 
@@ -37,7 +37,7 @@ def best_placement(board: Board, cop: Coord, thief: Coord, min_cut: int) -> Coor
     corner-herding progress metric. The seal-out guard is unconditional.
     """
     current = len(reachable_region(board, thief))
-    best: tuple[tuple[int, int, int, int], Coord] | None = None
+    scored: list[tuple[tuple[int, int, int, int], Coord]] = []
     for cell in legal_barrier_cells(board, cop):
         if cell == thief:
             continue
@@ -53,9 +53,11 @@ def best_placement(board: Board, cop: Coord, thief: Coord, min_cut: int) -> Coor
             continue
         d = abs(cell[0] - thief[0]) + abs(cell[1] - thief[1])
         key = (int(current - region < min_cut), region, -wall_affinity(board, cell), d)
-        if best is None or key < best[0]:
-            best = (key, cell)
-    return best[1] if best else None
+        scored.append((key, cell))
+    if not scored:
+        return None
+    _, cell = jitter.pick_min(scored, key=lambda kv: kv[0], legacy=lambda kv: (kv[0], kv[1]))
+    return cell
 
 
 def finite_placement(

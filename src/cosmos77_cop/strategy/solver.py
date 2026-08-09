@@ -14,6 +14,7 @@ import heapq
 from dataclasses import dataclass
 
 from ..engine.board import Board, Coord
+from . import jitter
 
 COP_TURN = 0
 THIEF_TURN = 1
@@ -109,18 +110,18 @@ def best_cop_move(board: Board, cop: Coord, thief: Coord) -> tuple[Coord, int] |
     thief can equally be finished with the rule-46 barrier — the brain chooses which.
     """
     tab = solve(board)
-    best: tuple[int, Coord] | None = None
+    costed: list[tuple[int, Coord]] = []
     for dest in tab.land[cop]:
         if dest == thief:
-            cost = 1
-        else:
-            r = tab.rank.get((dest, thief, THIEF_TURN))
-            if r is None:
-                continue
-            cost = 1 + r
-        if best is None or (cost, dest) < best:
-            best = (cost, dest)
-    return (best[1], best[0]) if best else None
+            costed.append((1, dest))
+            continue
+        r = tab.rank.get((dest, thief, THIEF_TURN))
+        if r is not None:
+            costed.append((1 + r, dest))
+    if not costed:
+        return None
+    cost, dest = jitter.pick_min(costed, key=lambda cd: cd[0], legacy=lambda cd: cd)
+    return (dest, cost)
 
 
 def best_thief_move(board: Board, cop: Coord, thief: Coord) -> tuple[Coord, int | None]:
@@ -130,15 +131,14 @@ def best_thief_move(board: Board, cop: Coord, thief: Coord) -> tuple[Coord, int 
     the cop's cell.
     """
     tab = solve(board)
-    best: tuple[tuple[float, int, int, int], Coord] | None = None
+    scored: list[tuple[tuple[float, int, int, int], Coord]] = []
     for dest in tab.land[thief]:
         if dest == cop:
             continue
         r = tab.rank.get((cop, dest, COP_TURN))
         value = float("inf") if r is None else float(r)
-        key = (value, len(board.open_neighbors(dest)), -dest[0], -dest[1])
-        if best is None or key > best[0]:
-            best = (key, dest)
-    assert best is not None  # STAY is always available
-    r = tab.rank.get((cop, best[1], COP_TURN))
-    return (best[1], r)
+        scored.append(((value, len(board.open_neighbors(dest)), -dest[0], -dest[1]), dest))
+    assert scored  # STAY is always available
+    _, dest = jitter.pick_max(scored, key=lambda kv: kv[0][:2], legacy=lambda kv: kv[0])
+    r = tab.rank.get((cop, dest, COP_TURN))
+    return (dest, r)
