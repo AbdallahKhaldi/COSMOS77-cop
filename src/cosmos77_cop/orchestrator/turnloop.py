@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import time
+
 from ..crypto.settle import settled_outcome
 from ..engine.capture import is_rule47_boxed
 from ..net.messages import TurnMessage, now_iso
@@ -12,12 +15,31 @@ from .turnactions import police_act
 from .turnactions_thief import thief_act, thief_concede
 from .turnstate import SideKit, TurnState
 
+_pace_s: float | None = None
+
+
+def _view_pace() -> float:
+    """Seconds to dwell after each view (``COSMOS_TURN_DELAY_MS``; 0 = full speed).
+
+    A local series settles in about two seconds, far too fast to watch.  Spectator
+    runs set this so the pursuit unfolds at human speed and the feed is genuinely
+    live rather than a recording paced by the browser.  League play never sets it.
+    """
+    global _pace_s
+    if _pace_s is None:
+        raw = os.environ.get("COSMOS_TURN_DELAY_MS", "").strip()
+        _pace_s = int(raw) / 1000 if raw.isdigit() else 0.0
+    return _pace_s
+
 
 def _emit(bridge: object, state: TurnState, kit: SideKit, banner: str, step: int) -> None:
     """Feed the live view, when one is attached (never a game-logic path)."""
     sink = getattr(bridge, "on_view", None)
     if sink is not None:
         sink(state, kit, banner, step)
+    dwell = _view_pace()
+    if dwell > 0:
+        time.sleep(dwell)
 
 
 def _send(gateway: Gateway, state: TurnState, record: dict, message: TurnMessage) -> bool:
