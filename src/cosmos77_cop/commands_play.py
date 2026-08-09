@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import os
 from pathlib import Path
 
 from .arming import ArmingError, declared_count, first_meeting, serve_posture
@@ -20,6 +21,7 @@ from .protocol.terms import terms_from_config
 from .repoinfo import code_version
 from .report.artifacts import ArtifactWriter
 from .report.finish import finish_series
+from .strategy import jitter
 
 
 def seed_github(gid_a: str, gid_b: str, *, selfplay: bool) -> dict[str, dict[str, str]]:
@@ -46,6 +48,7 @@ def serve_cmd(
     close: bool = True,
     gui: bool = False,
     snapshots: str | None = None,
+    vary_seed: int | None = None,
     counted: bool = False,
     events: bool = False,
 ) -> int:
@@ -55,6 +58,9 @@ def serve_cmd(
     ``--counted`` together, or the run refuses to start (the shared constitution never
     carries it). ``--events`` appends one JSON line per view to ``<out>/events.jsonl``.
     """
+    if vary_seed is not None:
+        os.environ["COSMOS_VARY_SEED"] = str(vary_seed)
+    jitter.arm_from_env()
     cfg = load_game_config(config_path)
     raw = json.loads(Path(config_path).read_text(encoding="utf-8"))
     peer = dataclasses.replace(

@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from ..engine.board import Board, Coord
 from ..engine.rules import destination, legal_move_tokens, token_between
-from . import solver
+from . import jitter, solver
 from .barriers import best_placement, finite_placement, herd_cell
 from .params import StrategyParams
 from .pathing import bfs_distances
@@ -82,14 +82,13 @@ def decide_fuzzy(
     params: StrategyParams,
 ) -> CopAction:
     """The cop's turn under a belief map: minimize expected distance; probe only when sure."""
-    best_token = None
-    best_cost = None
+    costed = []
     for token in legal_move_tokens(board, cop):
         dest = destination(cop, token)
         dist = bfs_distances(board, dest)
         cost = sum(p * dist.get(cell, 10**6) for cell, p in posterior.items())
-        if best_cost is None or (cost, token) < (best_cost, best_token):
-            best_token, best_cost = token, cost
+        costed.append((cost, token))
+    _, best_token = jitter.pick_min(costed, key=lambda ct: ct[0], legacy=lambda ct: ct)
     target, top_p = max(posterior.items(), key=lambda kv: (kv[1], kv[0]))
     dest = destination(cop, str(best_token))
     claim = dest if dest == target and top_p >= params.claim_threshold else None

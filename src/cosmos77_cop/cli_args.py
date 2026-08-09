@@ -24,6 +24,8 @@ def serve(argv: list[str]) -> int:
     parser.add_argument(
         "--events", action="store_true", help="append per-turn JSONL to <out>/events.jsonl"
     )
+    parser.add_argument("--vary-seed", type=int, default=None,
+                        help="seed tie-break variety (demo; default deterministic)")
     parser.add_argument("--out", required=True)
     parser.add_argument("--config", default="config/game.json")
     parser.add_argument("--alternate-labels", action="store_true")
@@ -51,6 +53,7 @@ def serve(argv: list[str]) -> int:
         snapshots=args.snapshots,
         counted=args.counted,
         events=args.events,
+        vary_seed=args.vary_seed,
     )
 
 
@@ -64,6 +67,8 @@ def selfplay(argv: list[str]) -> int:
     parser.add_argument(
         "--events", action="store_true", help="per-turn JSONL in both processes' run dirs"
     )
+    parser.add_argument("--vary-seed", type=int, default=None,
+                        help="seed tie-break variety in BOTH agents (sibling gets seed+1)")
     parser.add_argument(
         "--scent-model",
         default=None,
@@ -75,6 +80,7 @@ def selfplay(argv: list[str]) -> int:
     return selfplay_cmd(
         out=args.out, windows=args.windows, snapshots=args.snapshots,
         scent_model=args.scent_model, gui=args.gui, events=args.events,
+        vary_seed=args.vary_seed,
     )
 
 

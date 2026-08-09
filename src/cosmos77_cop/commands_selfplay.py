@@ -20,6 +20,7 @@ from .repoinfo import SIBLING_REPO, SIBLING_TOOL
 def selfplay_cmd(
     *, out: str | None = None, windows: int = 6, snapshots: str | None = None,
     scent_model: str | None = None, gui: bool = False, events: bool = False,
+    vary_seed: int | None = None,
 ) -> int:
     """Two-process practice series vs the sibling repo (playbook §0.1 — never in-process)."""
     sibling = Path("..") / SIBLING_REPO
@@ -32,6 +33,8 @@ def selfplay_cmd(
     my_port, their_port = (8801, 8802) if ROLE == "police" else (8802, 8801)
     tool = SIBLING_TOOL
     env = {k: v for k, v in os.environ.items() if k != "VIRTUAL_ENV"}
+    if vary_seed is not None:
+        env["COSMOS_VARY_SEED"] = str(vary_seed + 1)  # sibling varies independently
     peer_proc = subprocess.Popen(
         [
             "uv", "run", tool, "serve",
@@ -50,6 +53,7 @@ def selfplay_cmd(
     )
     try:
         rc = serve_cmd(
+            vary_seed=vary_seed,
             port=my_port,
             peer_url=f"http://127.0.0.1:{their_port}/mcp",
             gid_a=gid_a,
