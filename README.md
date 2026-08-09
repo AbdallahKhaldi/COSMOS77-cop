@@ -20,6 +20,13 @@ series are played against its independent sparring peer — see
 
 ---
 
+## Live (arena era)
+
+Our permanent public home: **https://cosmos77-arena-production.up.railway.app** — live 3D local-truth viewer, replay cinema with per-step
+`Verified OK`, public challenge page, challenger docs, league ledger. This agent's canonical league
+endpoint: `https://cosmos77-arena-production.up.railway.app/cop/mcp` (single-URL opponents dial `https://cosmos77-arena-production.up.railway.app/mcp`). Compatibility self-test for
+any team: the doctor card on `https://cosmos77-arena-production.up.railway.app/docs`, or locally `uv run cosmos-cop doctor --json --url …`.
+
 ## 1. The model: a Dec-POMDP, and why ours is nearly observable
 
 ### 1.1 The formal model
