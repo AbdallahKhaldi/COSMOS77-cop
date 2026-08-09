@@ -1,16 +1,20 @@
 # Deployment runbook — public reachability without losing a window
 
-Rule 10 requires the peer to be reachable from the public internet. We use **two** paths, and they
-are not interchangeable.
+Rule 10 requires the peer to be reachable from the public internet. We use **three** paths,
+and they are not interchangeable.
 
 | Path | What it is for | What it cannot do |
 |---|---|---|
-| **Render** (always-on) | Availability, first-contact handshakes, F1 smoke, the standing-friendly mode | No Gmail credentials and an ephemeral disk — it cannot write a durable artifact set or send a report, **by design** |
-| **local + cloudflared** | F2/F3 friendlies and **every counted run** | Needs a human at the machine |
+| **Railway hub** (always-on, canonical) | **Every counted run** (armed only from an operator SSH terminal — ADR-006), full friendlies, the public arena endpoints | Web paths structurally refuse counted; arming needs a human in an SSH TTY |
+| **Render** (always-on) | Availability backup, first-contact handshakes, F1 smoke, the standing-friendly mode | No Gmail credentials and an ephemeral disk — it cannot write a durable artifact set or send a report, **by design** |
+| **local + cloudflared** | F2/F3 rehearsal backup if the hub is ever unavailable | Needs a human at the machine |
 
-Counted games always run locally. F3's entire point is to rehearse the counted bytes on the
-counted network path, so a friendly that "passed on Render" proves nothing about the run that
-scores.
+Counted games execute on the always-on hub (decision amended 2026-08-09 — ADR-006 in
+docs/DECISIONS.md: durable volume for the unrepeatable artifact set, resident Gmail credentials,
+permanent public URLs, truthful Step-0 hardware declaration via `HUB_HARDWARE_DESC`). F3's point
+is unchanged: rehearse the counted bytes on the counted network path — which now means a hub
+friendly, not a tunnel — so a friendly that "passed on Render" proves nothing about the run
+that scores.
 
 ## The ready signal is 406, not 200
 
@@ -44,7 +48,7 @@ python ../kit/tools/netcheck.py https://cosmos77-cop.onrender.com/mcp --expect 4
 Free dynos sleep after ~15 min and cold-start in ~50 s: run `scripts/warmup.py` **10 minutes
 before** any agreed T, and tell opponents the first probe may need a retry.
 
-## cloudflared (every counted run)
+## cloudflared (rehearsal / backup path — no longer the counted path, ADR-006)
 
 ```bash
 brew install cloudflared

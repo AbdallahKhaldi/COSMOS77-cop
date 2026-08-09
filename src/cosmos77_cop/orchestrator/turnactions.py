@@ -63,6 +63,30 @@ def seal_and_wire(
     return record, message
 
 
+def _fold_barrier(state: TurnState, sender: str, cell: list[Any]) -> None:
+    """Validate and absorb one declared barrier, or record why it is refused (rule 15).
+
+    Refused declarations become violation evidence, never board state: boxed/rule-46
+    checks see only VALIDATED barriers, so a forged capture is structurally impossible.
+    """
+    if state.role != "thief" or sender != "police":
+        state.wire_violations.append(f"barrier declared by non-police sender {sender!r}")
+        return
+    placed = (int(cell[0]), int(cell[1]))
+    if not state.board.in_bounds(placed):
+        state.wire_violations.append(f"declared barrier {placed} is off-board")
+    elif placed in state.board.barriers:
+        state.wire_violations.append(f"declared barrier {placed} duplicates an existing barrier")
+    elif state.their_barriers >= state.cfg.max_barriers:
+        quota = state.cfg.max_barriers
+        state.wire_violations.append(f"declared barrier {placed} exceeds the quota of {quota}")
+    else:
+        state.their_barriers += 1
+        state.board.add_barrier(placed)
+        if capture.is_rule46(placed, state.my_pos):
+            state.finish("capture", "police", "rule_46 barrier on our cell")
+
+
 def observe_turn(state: TurnState, kit: SideKit, wire: dict[str, Any]) -> None:
     """Fold one applied opponent turn into local knowledge and detect message-driven endings."""
     message = TurnMessage.from_wire(wire)
@@ -74,18 +98,18 @@ def observe_turn(state: TurnState, kit: SideKit, wire: dict[str, Any]) -> None:
     if message.hint and cell is not None and confidence == "exact":
         kit.liar.observe(message.hint, cell, state.cfg.grid_size)
     if message.barrier_placed is not None:
-        placed = (int(message.barrier_placed[0]), int(message.barrier_placed[1]))
-        if placed not in state.board.barriers:
-            state.board.add_barrier(placed)
-        if state.role == "thief" and capture.is_rule46(placed, state.my_pos):
-            state.finish("capture", "police", "rule_46 barrier on our cell")
+        _fold_barrier(state, message.sender, message.barrier_placed)
     if message.capture_claim is not None:
         state.pending_claim = (int(message.capture_claim[0]), int(message.capture_claim[1]))
     if message.claim_response is not None and message.claim_response.get("caught"):
         state.final_response = dict(message.claim_response)
         state.finish("capture", "police", "thief admitted capture")
     if message.win_claim is not None and message.win_claim.get("type") == "survival":
-        state.finish("survival", "thief", "thief claimed the survival threshold")
+        if state.their_turns >= state.cfg.survival_threshold:
+            state.finish("survival", "thief", "thief claimed the survival threshold")
+        else:
+            note = f"premature survival claim at opponent turn {state.their_turns}"
+            state.wire_violations.append(f"{note} (threshold {state.cfg.survival_threshold})")
 
 
 class CopActionLike(Protocol):

@@ -19,5 +19,3 @@
 ## STILL MISSING (a human must supply these)
 
 - `agent_gmail`
-- `render_cop`
-- `render_thief`

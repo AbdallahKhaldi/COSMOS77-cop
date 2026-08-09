@@ -59,8 +59,14 @@ def verify_peer(
     ours: dict[str, Any],
     theirs: object,
     our_uid: str | None,
+    expected_gid: str | None = None,
 ) -> Verdict:
-    """Validate an inbound greeting against our own, in the kit's order (SPAR-N00..N10)."""
+    """Validate an inbound greeting against our own, in the kit's order (SPAR-N00..N10).
+
+    *expected_gid* pins the series to ONE opponent (the kit's E12 lesson): a third team
+    presenting value-equal terms must not have its play recorded under the configured
+    opponent's game_id/game_uid. Bystander-class — refuse on the record, keep waiting.
+    """
     if not isinstance(theirs, dict):
         return Verdict(False, "SPAR-N00", f"greeting is {type(theirs).__name__}, not an object")
     if "terms" not in theirs:
@@ -100,6 +106,15 @@ def verify_peer(
     identity = theirs.get("identity") or {}
     if not (theirs.get("group_id") or identity.get("group_id")):
         return Verdict(False, "SPAR-N08", "no group_id anywhere — no game_id can be derived")
+    peer_gid = str(theirs.get("group_id") or identity.get("group_id"))
+    if expected_gid is not None and peer_gid != expected_gid:
+        return Verdict(
+            False,
+            "SPAR-N08",
+            f"a DIFFERENT group ({peer_gid!r}) answered a series opened with "
+            f"{expected_gid!r} — refusing to mix two opponents into one artifact set",
+            bystander=True,
+        )
     if uid_decision(our_uid, theirs.get("game_uid")) == REFUSE_UID:
         return Verdict(
             False,

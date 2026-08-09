@@ -129,3 +129,21 @@ def test_omission_never_refuses_reference_shaped_minimal_greeting():
 def test_peer_group_id_prefers_top_level():
     assert peer_group_id(greeting()) == "opponent-x"
     assert peer_group_id({"identity": {"group_id": "deep"}}) == "deep"
+
+
+def test_expected_gid_pins_the_series_to_one_opponent():
+    stranger = greeting()
+    stranger["group_id"] = "third-team"
+    stranger["identity"] = {"group_id": "third-team", "members": []}
+    v = verify_peer(
+        ours=ours(), theirs=stranger, our_uid=None, expected_gid="opponent-x"
+    )
+    assert not v.ok and v.code == "SPAR-N08" and v.bystander
+    assert "mix two opponents" in v.detail
+
+
+def test_expected_gid_accepts_the_configured_opponent_and_stays_optional():
+    v = verify_peer(ours=ours(), theirs=greeting(), our_uid=None, expected_gid="opponent-x")
+    assert v.ok
+    unpinned = verify_peer(ours=ours(), theirs=greeting(), our_uid=None)
+    assert unpinned.ok

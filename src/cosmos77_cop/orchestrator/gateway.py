@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from ..engine.config import GameConfig
@@ -46,15 +47,17 @@ class Gateway:
         self.role = role
         self.group_id = group_id
         self.sub_game_number = sub_game_number
+        self.opponent_group_id = opponent_group_id
         self.terms = terms_from_config(game_cfg.raw)
         self.uid = (
             game_uid(self.terms, group_id, opponent_group_id) if opponent_group_id else None
         )
+        public_url = os.environ.get("COSMOS_PUBLIC_MCP_URL")
         self.identity: dict[str, Any] = {
             "group_id": group_id,
             "group_name": group_name,
             "llm_model": identity.LLM_MODEL,
-            "mcp_servers": {"self": f"http://127.0.0.1:{peer_cfg.my_port}/mcp"},
+            "mcp_servers": {"self": public_url or f"http://127.0.0.1:{peer_cfg.my_port}/mcp"},
             "repos": dict(identity.TEAM_REPOS),
             "members": list(identity.MEMBER_IDS),
         }
@@ -90,7 +93,10 @@ class Gateway:
         )
 
     def verify(self, theirs: object) -> Verdict:
-        """Validate an inbound greeting against ours."""
+        """Validate an inbound greeting against ours, pinned to the configured opponent."""
         return verify_peer(
-            ours=self.greeting(nonce="0" * 32), theirs=theirs, our_uid=self.uid
+            ours=self.greeting(nonce="0" * 32),
+            theirs=theirs,
+            our_uid=self.uid,
+            expected_gid=self.opponent_group_id,
         )

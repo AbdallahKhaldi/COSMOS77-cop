@@ -68,4 +68,10 @@ def test_gateway_wires_identity_and_uid():
     assert gw.verify(greeting).code == "SPAR-N07"
     thief_view = dict(greeting)
     thief_view["role"] = "thief"
+    # The gid pin (kit E12): value-equal terms from a group that is NOT the configured
+    # opponent are refused as a bystander; the real opponent's greeting verifies.
+    echoed = gw.verify(thief_view)
+    assert echoed.code == "SPAR-N08" and echoed.bystander
+    thief_view["group_id"] = "rival-team"
+    thief_view["identity"] = {**thief_view["identity"], "group_id": "rival-team"}
     assert gw.verify(thief_view).ok

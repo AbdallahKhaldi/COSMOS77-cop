@@ -32,34 +32,60 @@ class SubGameReport:
     settlement: Settlement | None = None
     tokens: int = 0
     tracker_trace: list[list[int] | None] = field(default_factory=list)
+    equivocations: list[list[Any]] = field(default_factory=list)
+    violations: list[str] = field(default_factory=list)
 
 
 def observe_batch(state: TurnState, kit: SideKit, bridge: object, batch: list[dict]) -> None:
-    """Fold applied opponent turns into local knowledge, with bridge hooks."""
+    """Fold applied opponent turns into local knowledge, with bridge hooks.
+
+    Honors ``play_sub_game``'s never-raises contract: a wire message that cannot be folded
+    is recorded as a violation and skipped — hostile input never kills a series.
+    """
     for wire in batch:
-        observe_turn(state, kit, wire)
-        note = getattr(bridge, "note_opponent_turn", None)
-        if note is not None:
-            note(state, kit, wire)
-        view = getattr(bridge, "view_attachment", None)
-        if view is not None:
-            view.note_hint(str(wire.get("hint", "")))
-        answer = wire.get("claim_response")
-        if answer is not None and not answer.get("caught"):
-            on_false = getattr(bridge, "note_claim_answered_false", None)
-            claimed = answer.get("claim")
-            if on_false is not None and isinstance(claimed, list):
-                on_false((int(claimed[0]), int(claimed[1])))
+        try:
+            observe_turn(state, kit, wire)
+            note = getattr(bridge, "note_opponent_turn", None)
+            if note is not None:
+                note(state, kit, wire)
+            view = getattr(bridge, "view_attachment", None)
+            if view is not None:
+                view.note_hint(str(wire.get("hint", "")))
+            answer = wire.get("claim_response")
+            if answer is not None and not answer.get("caught"):
+                on_false = getattr(bridge, "note_claim_answered_false", None)
+                claimed = answer.get("claim")
+                if on_false is not None and isinstance(claimed, list):
+                    on_false((int(claimed[0]), int(claimed[1])))
+        except Exception as exc:  # hostile wire input must never escape the turn loop
+            state.wire_violations.append(f"unfoldable turn at step {wire.get('step')}: {exc}")
+
+
+def surface_wire_evidence(gateway: Gateway, state: TurnState, report: SubGameReport) -> None:
+    """Copy receiver + turn-level violation evidence into the report — it must stay LOUD.
+
+    Equivocations are (step, first_commit, second_commit) triples; violations carry the
+    barrier/claim refusals and past-window floods. The log artifact's summary embeds both.
+    """
+    report.equivocations = [list(t) for t in gateway.receiver.equivocations]
+    floods = [f"past-window flood at step {s}" for s in gateway.receiver.violations]
+    report.violations = [*state.wire_violations, *floods]
 
 
 def audit_phase(gateway: Gateway, state: TurnState, bridge: object, report: SubGameReport) -> None:
-    """Both reveal, then both verify; corroborate the ending; settle the row (§2.8-2.9)."""
+    """Both reveal, then both verify; corroborate the ending; settle the row (§2.8-2.9).
+
+    Beyond the spec'd four layers: a survival ending demands the revealed thief trail
+    actually reach the threshold, and equivocation evidence refuses ``log_verified``
+    (kit delivery contract — "tampering evidence and must stay loud").
+    """
     theirs = runtime.exchange_audits(
         gateway, gateway.records, state.ending.result, gateway.peer_cfg.watchdog_s
     )
     report.their_audit_arrived = theirs is not None
     if theirs is None:
         report.settlement = settled_outcome(state.ending.result, None, their_audit_arrived=False)
+        surface_wire_evidence(gateway, state, report)
         return
     report.opp_records = list(theirs.get("records") or [])
     verdict = audit_records(
@@ -84,5 +110,22 @@ def audit_phase(gateway: Gateway, state: TurnState, bridge: object, report: SubG
         )
         if not ok:
             verdict = AuditReport("tampered", [], [f"ending corroboration failed: {reason}"])
+    if state.ending.result == "survival" and state.role == "police" and verdict.clean:
+        top = max(
+            (int(r["payload"].get("step", 0)) for r in report.opp_records
+             if isinstance(r.get("payload"), dict)),
+            default=0,
+        )
+        if top < state.cfg.survival_threshold:
+            verdict = AuditReport("tampered", [], [
+                f"survival corroboration failed: revealed trail reaches step {top} "
+                f"of {state.cfg.survival_threshold}"
+            ])
+    if gateway.receiver.equivocations:
+        verdict = AuditReport("tampered", [], [
+            "equivocation evidence (step, first_commit, second_commit): "
+            f"{[list(t) for t in gateway.receiver.equivocations]}"
+        ])
     report.my_audit = verdict
     report.settlement = settled_outcome(state.ending.result, verdict, their_audit_arrived=True)
+    surface_wire_evidence(gateway, state, report)

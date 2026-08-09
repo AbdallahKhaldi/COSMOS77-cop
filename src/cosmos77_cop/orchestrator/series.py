@@ -18,7 +18,7 @@ from ..protocol.ids import artifact_filenames, game_id
 from .brainbridge import ROLE, BrainBridge
 from .gateway import Gateway
 from .peerconf import PeerConfig
-from .serieslog import sealed_step0, write_window_log
+from .serieslog import note_peer_repos, sealed_step0, write_window_log
 from .turnloop import SubGameReport, play_sub_game
 from .turnstate import SideKit, fresh_state
 
@@ -55,6 +55,7 @@ class SeriesDriver:
         out_dir: str | Path,
         code_version: str,
         num_games_declared: int | None = None,
+        first_meeting: bool = True,
         hardware: dict[str, Any] | None = None,
         writer: object | None = None,
         alternate_labels: bool = True,
@@ -69,6 +70,7 @@ class SeriesDriver:
         self.out_dir = Path(out_dir)
         self.code_version = code_version
         self.num_games_declared = num_games_declared
+        self.first_meeting = first_meeting
         self.hardware = hardware or {}
         self.inbox = PeerInbox(peer_cfg.queue_depth)
         self.mcp = build_server(self.inbox, f"cosmos77-series-{ROLE}")
@@ -136,5 +138,6 @@ class SeriesDriver:
         self.reports.append(report)
         if self.peer_identity is None and gateway.peer_greeting is not None:
             self.peer_identity = gateway.peer_greeting
+            note_peer_repos(self, window)
         write_window_log(self, window, report)
         return report

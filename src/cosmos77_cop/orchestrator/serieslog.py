@@ -30,6 +30,8 @@ def write_window_log(driver: object, window: int, report: SubGameReport) -> None
             "settled": bool(settlement and settlement.settled),
             "log_verified": bool(settlement and settlement.log_verified),
             "tampered": bool(settlement and settlement.tampered),
+            "equivocations": report.equivocations,
+            "violations": report.violations,
             "tracker_trace": report.tracker_trace,
             "row": row_from_report(
                 report,
@@ -45,6 +47,18 @@ def write_window_log(driver: object, window: int, report: SubGameReport) -> None
         records=report.records,
         opponent_records=report.opp_records,
     )
+
+
+def note_peer_repos(driver: object, window: int) -> None:
+    """Map the peer's declared repos to THEIR gid in ``links.github`` (rule 49) — never ours.
+
+    An opponent that declared no repos gets no entry: their links are not invented for them.
+    """
+    police_gid, thief_gid = driver.window_roles(window)
+    opp_gid = thief_gid if ROLE == "police" else police_gid
+    repos = ((driver.peer_identity or {}).get("identity") or {}).get("repos")
+    if driver.writer is not None and isinstance(repos, dict) and repos:
+        driver.writer.links["github"][opp_gid] = dict(repos)
 
 
 def sealed_step0(driver: object, group_id: str, window: int) -> dict[str, Any]:

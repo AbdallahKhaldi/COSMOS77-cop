@@ -39,11 +39,13 @@ class TurnState:
     my_moves: int = 0
     barriers_left: int = 0
     their_turns: int = 0
+    their_barriers: int = 0
     pending_claim: Coord | None = None
     final_response: dict[str, Any] | None = None
     ending: Ending | None = None
     tokens_sub_game: int = 0
     tracker_trace: list[list[int] | None] = field(default_factory=list)
+    wire_violations: list[str] = field(default_factory=list)
 
     @property
     def over(self) -> bool:

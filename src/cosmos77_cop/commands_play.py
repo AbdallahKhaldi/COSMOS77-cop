@@ -6,7 +6,7 @@ import dataclasses
 import json
 from pathlib import Path
 
-from .arming import ArmingError, declared_count, serve_posture
+from .arming import ArmingError, declared_count, first_meeting, serve_posture
 from .crypto.step0 import hardware_spec
 from .engine.config import load_game_config
 from .orchestrator.brainbridge import ROLE
@@ -20,6 +20,15 @@ from .protocol.terms import terms_from_config
 from .repoinfo import code_version
 from .report.artifacts import ArtifactWriter
 from .report.finish import finish_series
+
+
+def seed_github(gid_a: str, gid_b: str, *, selfplay: bool) -> dict[str, dict[str, str]]:
+    """``links.github`` seed: OUR repos under our gid(s) only — the peer's arrive via greeting.
+
+    Claiming our URLs for the opponent's gid is a false rule-49 field; in selfplay both
+    labels are this team, so both may carry our repos.
+    """
+    return {g: dict(TEAM_REPOS) for g in (gid_a, gid_b) if selfplay or g == GROUP_ID}
 
 
 def serve_cmd(
@@ -51,8 +60,12 @@ def serve_cmd(
     peer = dataclasses.replace(
         load_peer_config("config/peer.toml"), my_port=port, opponent_url=peer_url
     )
+    our_gid = GROUP_ID if GROUP_ID in (gid_a, gid_b) else gid_a
+    opp_gid = gid_b if our_gid == gid_a else gid_a
     try:
-        posture = serve_posture(config_counted=peer.league_counted, cli_counted=counted)
+        posture = serve_posture(
+            config_counted=peer.league_counted, cli_counted=counted, opponent=opp_gid
+        )
     except ArmingError as exc:
         print(f"serve: REFUSED — {exc} (peer.toml [league] counted AND serve --counted)")
         return 2
@@ -62,7 +75,7 @@ def serve_cmd(
         out,
         gid=gid,
         uid=uid,
-        github={gid_a: dict(TEAM_REPOS), gid_b: dict(TEAM_REPOS)},
+        github=seed_github(gid_a, gid_b, selfplay=alternate_labels),
         counted=posture.counted,
         reason=posture.label,
     )
@@ -85,6 +98,7 @@ def serve_cmd(
         out_dir=out,
         code_version=code_version(),
         num_games_declared=declared_count(),
+        first_meeting=first_meeting(opp_gid),
         hardware=hardware_spec(),
         writer=writer,
         alternate_labels=alternate_labels,
@@ -102,12 +116,11 @@ def serve_cmd(
             settled = bool(report.settlement and report.settlement.settled)
             print(f"g{window:02d} {ROLE}: {report.result} ({report.reason}) settled={settled}")
         if close:
-            my_gid = GROUP_ID if GROUP_ID in (gid_a, gid_b) else gid_a
             summary = finish_series(
                 driver,
                 writer,
                 raw_cfg=raw,
-                my_gid=my_gid,
+                my_gid=our_gid,
                 my_identity=driver.gateway_for(todo[0]).identity,
                 peer_identity=driver.peer_identity,
                 expected_windows=windows,

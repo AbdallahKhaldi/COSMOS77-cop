@@ -7,7 +7,7 @@ from ..engine.capture import is_rule47_boxed
 from ..net.messages import TurnMessage, now_iso
 from . import runtime
 from .gateway import Gateway
-from .subreport import SubGameReport, audit_phase, observe_batch
+from .subreport import SubGameReport, audit_phase, observe_batch, surface_wire_evidence
 from .turnactions import police_act
 from .turnactions_thief import thief_act, thief_concede
 from .turnstate import SideKit, TurnState
@@ -116,6 +116,7 @@ def play_sub_game(
         tokens=kit.meter.total_series,
         tracker_trace=list(state.tracker_trace),
     )
+    surface_wire_evidence(gateway, state, report)
     if state.ending.result in ("capture", "survival"):
         audit_phase(gateway, state, bridge, report)
     else:
