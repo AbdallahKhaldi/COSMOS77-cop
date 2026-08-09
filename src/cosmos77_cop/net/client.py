@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import threading
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from fastmcp import Client
@@ -75,6 +75,22 @@ class PeerClient:
             raise PeerCallError(f"{tool}: deadline of {deadline_s}s expired") from exc
         except Exception as exc:
             raise PeerCallError(f"{tool}: {exc}") from exc
+
+    async def _with_session(self, fn: Callable[[Client], Awaitable[object]]) -> object:
+        client = await self._acquire()
+        return await fn(client)
+
+    def session(self, fn: Callable[[Client], Awaitable[object]], *, deadline_s: float) -> object:
+        """Run *fn* against the held session under a deadline (the doctor's tools/list path)."""
+        loop = self._ensure_loop()
+        future = asyncio.run_coroutine_threadsafe(self._with_session(fn), loop)
+        try:
+            return future.result(timeout=deadline_s)
+        except TimeoutError as exc:
+            future.cancel()
+            raise PeerCallError(f"session: deadline of {deadline_s}s expired") from exc
+        except Exception as exc:
+            raise PeerCallError(f"session: {exc}") from exc
 
     def close(self) -> None:
         """Tear the session and stop the loop thread (idempotent)."""

@@ -12,7 +12,7 @@ import sys
 
 from cosmos77_cop import __version__
 
-from . import cli_args, cli_pair
+from . import cli_args, cli_doctor, cli_pair
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,6 +30,7 @@ def main(argv: list[str] | None = None) -> int:
         "console": cli_args.console,
         "report": cli_args.report,
         "pair": cli_pair.pair,
+        "doctor": cli_doctor.doctor,
     }
     if args and args[0] in handlers:
         return handlers[args[0]](args[1:])
@@ -37,10 +38,6 @@ def main(argv: list[str] | None = None) -> int:
         from cosmos77_cop.commands import kill_cmd
 
         return kill_cmd()
-    if args and args[0] == "doctor":
-        from cosmos77_cop.commands import doctor_cmd
-
-        return doctor_cmd()
     if args:
         print(f"cosmos-cop: unknown subcommand {args[0]!r}")
         return 2
