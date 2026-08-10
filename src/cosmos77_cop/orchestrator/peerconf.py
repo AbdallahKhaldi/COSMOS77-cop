@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from ..net.receiver import reconcile_budgets
+from ..strategy.params import StrategyParams, from_overlay
 from .identity import LLM_MODEL
 from .peerlayers import GAME_CONFIG, apply_env, apply_signed
 
@@ -45,8 +46,12 @@ class PeerConfig:
     league_counted: bool = False
     #: Verbatim ``[strategy]`` overlay — ONLY the keys the operator actually set, so no
     #: strategy default is ever restated here. ``strategy/params.py`` owns the defaults;
-    #: a brain applies this with ``dataclasses.replace(StrategyParams(), **cfg.strategy)``.
+    #: :meth:`strategy_params` is the one place that turns this into typed knobs.
     strategy: dict[str, Any] = field(default_factory=dict)
+
+    def strategy_params(self) -> StrategyParams:
+        """The documented defaults with this peer's ``[strategy]`` overlay applied."""
+        return from_overlay(self.strategy)
 
 
 def load_peer_config(
@@ -94,4 +99,5 @@ def load_peer_config(
         turn_timeout_s=cfg.turn_timeout_s,
         reorder_window=cfg.reorder_window,
     )
+    cfg.strategy_params()  # a mistyped knob refuses HERE, not silently mid-series
     return cfg

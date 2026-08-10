@@ -135,7 +135,7 @@ class SeriesDriver:
             setup=self.hints,
             tokens_spent=self.tokens_spent,
         )
-        bridge = BrainBridge(state)
+        bridge = BrainBridge(state, self.peer_cfg.strategy_params())
         if self.view_attachment is not None:
             bridge.view_attachment = self.view_attachment
             self.view_attachment.attach(bridge, window)
