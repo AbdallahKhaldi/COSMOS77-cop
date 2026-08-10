@@ -8,12 +8,25 @@ is project-fatal under rules 37-38.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..engine.config import GAME_CONFIG, signed_value
+
 LEDGER_FILE = "artifacts/league_ledger.json"
-MIN_TO_PASS = 2
-MAX_GAMES = 10
+LEAGUE = "network_and_league"
+
+
+def league_limits(config_path: str | Path = GAME_CONFIG) -> tuple[int, int]:
+    """``(min_games_to_pass, max_games_per_team)`` — read from the SIGNED constitution.
+
+    App. F fixes both numbers and `game.json` carries them; restating them as module literals
+    was a §0.14 violation waiting to drift away from the file the opponents agreed.
+    """
+    return (
+        int(signed_value(LEAGUE, "min_games_to_pass", config_path)),
+        int(signed_value(LEAGUE, "max_games_per_team", config_path)),
+    )
 
 
 class LedgerError(RuntimeError):
@@ -26,13 +39,30 @@ class Ledger:
 
     path: Path
     entries: dict[str, dict[str, object]]
+    limits: tuple[int, int] = field(default_factory=league_limits)
+
+    @property
+    def min_to_pass(self) -> int:
+        """The rule-31 floor of counted games against different teams (signed)."""
+        return self.limits[0]
+
+    @property
+    def max_games(self) -> int:
+        """The rule-31 cap on counted games (signed)."""
+        return self.limits[1]
 
     @classmethod
-    def load(cls, path: str | Path = LEDGER_FILE) -> Ledger:
+    def load(
+        cls, path: str | Path = LEDGER_FILE, config_path: str | Path = GAME_CONFIG
+    ) -> Ledger:
         """Load the ledger (an absent file is an empty ledger, not an error)."""
         target = Path(path)
         raw = json.loads(target.read_text(encoding="utf-8")) if target.exists() else {}
-        return cls(path=target, entries=dict(raw.get("counted_games") or {}))
+        return cls(
+            path=target,
+            entries=dict(raw.get("counted_games") or {}),
+            limits=league_limits(config_path),
+        )
 
     @property
     def counted_games_played(self) -> int:
@@ -56,8 +86,10 @@ class Ledger:
                 f"rule 52: a counted game against {opponent} is already recorded "
                 f"({self.entries[opponent]['game_id']}); only one counts"
             )
-        if self.counted_games_played >= MAX_GAMES:
-            raise LedgerError(f"rule 31: the league cap of {MAX_GAMES} counted games is reached")
+        if self.counted_games_played >= self.max_games:
+            raise LedgerError(
+                f"rule 31: the league cap of {self.max_games} counted games is reached"
+            )
         self.entries[opponent] = {
             "game_id": game_id,
             "game_uid": game_uid,
@@ -74,8 +106,8 @@ class Ledger:
             "only by a settled counted run.",
             "counted_games": self.entries,
             "counted_games_played": self.counted_games_played,
-            "min_to_pass": MIN_TO_PASS,
-            "max_games": MAX_GAMES,
+            "min_to_pass": self.min_to_pass,
+            "max_games": self.max_games,
         }
         self.path.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return self.path
@@ -83,4 +115,4 @@ class Ledger:
     @property
     def passes_minimum(self) -> bool:
         """Whether we have met the rule-31 floor of counted games against different teams."""
-        return self.counted_games_played >= MIN_TO_PASS
+        return self.counted_games_played >= self.min_to_pass

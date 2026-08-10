@@ -2,6 +2,7 @@
 
 import json
 import sys
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,7 +10,7 @@ import pytest
 from cosmos77_cop.protocol.canonical import canonical_bytes
 from cosmos77_cop.report.gatekeeper import Gatekeeper, SendRefusedError
 from cosmos77_cop.report.gmail import SCOPES, has_credentials, send_report
-from cosmos77_cop.report.ledger import MAX_GAMES, Ledger, LedgerError
+from cosmos77_cop.report.ledger import Ledger, LedgerError, league_limits
 from cosmos77_cop.report.mail import (
     BodyMismatchError,
     attachment_bytes,
@@ -159,10 +160,49 @@ def test_ledger_records_one_counted_game_per_opponent(tmp_path):
 
 def test_ledger_enforces_the_league_cap(tmp_path):
     ledger = Ledger.load(tmp_path / "l.json")
-    for index in range(MAX_GAMES):
+    for index in range(ledger.max_games):
         ledger.record(opponent=f"team{index}", game_id="g", game_uid="u", won=False, settled_at="t")
     with pytest.raises(LedgerError, match="rule 31"):
         ledger.record(opponent="overflow", game_id="g", game_uid="u", won=False, settled_at="t")
+
+
+def test_the_league_caps_are_read_from_the_signed_constitution(tmp_path):
+    """§0.14: `min_games_to_pass` / `max_games_per_team` are signed terms in game.json, not
+    module literals that can drift away from the file the opponents agreed."""
+    repo = Path(__file__).resolve().parents[2]
+    signed = json.loads((repo / "config" / "game.json").read_text(encoding="utf-8"))
+    block = signed["network_and_league"]
+    assert league_limits() == (block["min_games_to_pass"], block["max_games_per_team"])
+    other = tmp_path / "game.json"
+    other.write_text(
+        json.dumps({"network_and_league": {"min_games_to_pass": 3, "max_games_per_team": 4}}),
+        encoding="utf-8",
+    )
+    ledger = Ledger.load(tmp_path / "l.json", other)
+    assert (ledger.min_to_pass, ledger.max_games) == (3, 4)
+    for index in range(4):
+        ledger.record(opponent=f"t{index}", game_id="g", game_uid="u", won=False, settled_at="t")
+    with pytest.raises(LedgerError, match="cap of 4"):
+        ledger.record(opponent="over", game_id="g", game_uid="u", won=False, settled_at="t")
+    body = json.loads((tmp_path / "l.json").read_text(encoding="utf-8"))
+    assert body["min_to_pass"] == 3 and body["max_games"] == 4
+
+
+def test_the_gatekeeper_rate_is_the_signed_requests_per_minute(tmp_path, capsys):
+    """The class docstring claims the refill rate derives from the signed block; a literal 30
+    made that a coincidence (audit 4c)."""
+    from cosmos77_cop.commands import report_cmd
+
+    repo = Path(__file__).resolve().parents[2]
+    rpm = json.loads((repo / "config" / "game.json").read_text(encoding="utf-8"))
+    expected = rpm["rate_limiter_gatekeeper"]["requests_per_minute"] / 60.0
+    body = {"game_id": "a-vs-b", "league": {"counted": False}, "mutual_agreement": {"sha256": "x"}}
+    path = tmp_path / "result_a-vs-b.json"
+    path.write_bytes(canonical_bytes(body) + b"\n")
+    with patch("cosmos77_cop.report.gatekeeper.Gatekeeper.from_config") as built:
+        report_cmd(str(path), counted=False, dry_run=True)
+    assert built.call_args.args[0] == rpm["rate_limiter_gatekeeper"]["requests_per_minute"]
+    assert Gatekeeper.from_config(built.call_args.args[0], 5.0, 20).rate_per_sec == expected
 
 
 @patch("cosmos77_cop.report.gmail.build_service")

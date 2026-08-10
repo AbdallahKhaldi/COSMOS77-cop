@@ -22,7 +22,8 @@ from .doctor.uidtopo import topology_stage, uid_stage
 from .net.client import PeerClient
 from .net.probes import probe
 from .orchestrator.brainbridge import ROLE
-from .orchestrator.identity import GROUP_ID, GROUP_NAME, LLM_MODEL, MEMBER_IDS, TEAM_REPOS
+from .orchestrator.hintconf import hint_setup
+from .orchestrator.identity import GROUP_ID, GROUP_NAME, MEMBER_IDS, TEAM_REPOS
 from .orchestrator.peerconf import load_peer_config
 from .protocol.ids import game_uid
 from .protocol.locks import OUR_LOCKS
@@ -41,7 +42,8 @@ def build_probe_greeting(raw_cfg: dict[str, Any], their_gid: str | None) -> dict
         "role": ROLE,
         "sub_game_number": 1,
         "identity": {
-            "group_id": GROUP_ID, "group_name": GROUP_NAME, "llm_model": LLM_MODEL,
+            "group_id": GROUP_ID, "group_name": GROUP_NAME,
+            "llm_model": hint_setup(load_peer_config("config/peer.toml")).declared_model,
             "mcp_servers": {"self": "doctor://no-callback"}, "repos": dict(TEAM_REPOS),
             "members": list(MEMBER_IDS), "counted_games_played": declared_count(),
             "note": "FRIENDLY DIAGNOSTIC PROBE (cosmos-cop doctor) — uncounted, no game "

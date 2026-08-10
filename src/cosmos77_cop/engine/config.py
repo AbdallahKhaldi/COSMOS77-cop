@@ -13,6 +13,8 @@ from typing import Any
 
 Coord = tuple[int, int]
 
+GAME_CONFIG = "config/game.json"
+
 _FIXED: dict[tuple[str, str], Any] = {
     ("board_and_agents", "num_agents"): 2,
     ("board_and_agents", "axis_origin_corner"): "top-left",
@@ -60,6 +62,7 @@ class GameConfig:
     pheromone_decay: float
     pheromone_min_center_intensity: float
     num_games: int
+    token_budget_per_series: int
 
 
 def _get(raw: dict[str, Any], section: str, key: str) -> object:
@@ -115,9 +118,23 @@ def from_dict(raw: dict[str, Any]) -> GameConfig:
         pheromone_decay=_get(raw, "pheromones", "pheromone_decay"),
         pheromone_min_center_intensity=_get(raw, "pheromones", "pheromone_min_center_intensity"),
         num_games=_get(raw, "network_and_league", "num_games"),
+        token_budget_per_series=_get(raw, "network_and_league", "token_budget_per_series"),
     )
 
 
 def load_game_config(path: str | Path) -> GameConfig:
     """Load and validate the shared constitution file at *path*."""
     return from_dict(json.loads(Path(path).read_text(encoding="utf-8")))
+
+
+def signed_value(section: str, key: str, path: str | Path = GAME_CONFIG) -> object:
+    """One SIGNED extended-block tunable, e.g. the league caps or the Gatekeeper's rate.
+
+    :class:`GameConfig` freezes the terms the ENGINE plays by; the league and rate-limiter
+    blocks are equally signed and equally binding, and §0.14 forbids restating any of them as a
+    literal. A missing constitution or key raises rather than substituting an invented number.
+    """
+    target = Path(path)
+    if not target.exists():
+        raise ConfigError(f"constitution {target} is missing; {section}.{key} has no source")
+    return _get(json.loads(target.read_text(encoding="utf-8")), section, key)

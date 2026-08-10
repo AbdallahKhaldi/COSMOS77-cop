@@ -47,7 +47,7 @@ def finish_series(
             "timezone": "Asia/Jerusalem",
             "game_started_at": driver.reports[0].started_at if driver.reports else now_iso(),
             "num_sub_games": driver.cfg.num_games,
-            "max_tokens_per_game": 200000,
+            "max_tokens_per_series": driver.cfg.token_budget_per_series,
             "groups": {
                 "group_1": _group_block(
                     my_gid,

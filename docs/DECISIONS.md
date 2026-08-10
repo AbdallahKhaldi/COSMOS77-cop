@@ -156,3 +156,82 @@ directly (opponents who watch a replay with integrity stamps become opponents wh
 games), and the replay cinema doubles as the mandatory verification artifact with its per-step
 seals. Screenshots for both READMEs come from the arena live view and the replay cinema — the
 same two surfaces the professor can visit.
+
+---
+
+## ADR-008 — The hint lint bans DIGITS, not spelled-out numbers; the intent flag is measured, not drawn
+
+**Conflict.** Rule 27 forbids hints that carry coordinates. `hints/lint.py` implements that as
+`re.compile(r"\d")` — an outright digit ban plus a hard word-cap and a safe-line substitution.
+That is airtight against `"3,4"` and `"row 2"`, and blind to `"row three, column four"`. A
+maximal reading of rule 27 would have us parse spelled-out numerals, ordinals and their
+combinations in every language a taunt might borrow from. Separately, rule 25 / §4.5 require the
+sealed `intent` flag to be *truthful*, and the rulebook never says against what.
+
+**Decision.** Keep the digit ban as the mechanical lint and **do not** add spelled-number
+parsing. Instead, remove the ability to *say* a coordinate at all: the Gemini prompt forbids
+numbers of any kind, the template pools contain no numerals, and every line — generated or
+canned — passes the same `enforce()` before it may cross the wire. The residual risk is
+documented here rather than chased in code. The `intent` flag is **measured after the text is
+chosen**, by evaluating the line that actually crosses the wire against the cell that turn
+actually seals (`liar_score.declared_intent`), using the very predicates we score opponents by.
+A line that commits to no direction is not falsifiable and keeps the bluff policy's own label.
+
+**Why.** A spelled-number regex is a losing arms race with natural language and would produce
+false positives that silently swap real taunts for the safe line, degrading the deliverable it
+was meant to protect; the digit ban plus a 15-word cap plus a fixed persona prompt already makes
+a usable coordinate channel implausible. On the flag: drawing `intent` from an RNG *before* any
+text existed classified the *pool*, not the statement. Measured on a real series, 10 of 32 hints
+(31%) were sealed `lie` while the statement was TRUE about our own half — we broadcast our real
+position for free and labelled it a bluff. The reverse error, `truth` on a false statement, is
+the one §2.2 calls tampering; it had not fired only because the truth pool was vacuously
+generic, and one positional line in it (*"near the middle of {arena}"*) would have fired it from
+a corner the moment the RNG picked it. That line is now vacuous too. Post-fix the same scored
+replay reads 0 of 34 mis-declared, in both directions.
+
+---
+
+## ADR-009 — Rules 8–9 govern the LIVE interface; the hub's bird's-eye REPLAY is post-settlement (amends Phase-11B, 2026-08-10)
+
+**Conflict.** Playbook §5 Phase 11B states its legality rail absolutely: the web console shows
+*"OPERATIONAL data only — window status, outcomes, audits, hashes — NEVER any board, position,
+belief, or scent render (rules 8–9: bird's-eye view = project disqualification)"*. The always-on
+hub (`COSMOS77-hub`) nevertheless renders a **bird's-eye replay** of settled games
+(`src/cosmos_hub/frames.py`, `templates/replay.html`) — a full timeline with both agents'
+positions on one board. Until now that was justified only inside the hub's own
+`ARENA-V3-SPEC.md` ("bird's-eye only in replay of settled games"), i.e. in the repo that does it,
+and nowhere in the two graded agent repos. The downside of an unexamined reading here is
+**project disqualification**, so it may not stay an implicit convention.
+
+**Decision.** Amended 2026-08-10: **rules 8–9 bind the LIVE surfaces, and the hub's bird's-eye
+replay of a SETTLED game is legal.** Concretely, and unchanged by this ADR: every live surface —
+the Phase-9 Tkinter window, the arena's 3D live page, this repo's `console/` ops panel — stays
+one-agent-local-truth, opponent knowledge rendered only as a labelled BELIEF, one perspective per
+socket, with the console still restricted to operational data. The bird's-eye view exists in
+exactly one place: the replay cinema, fed only by window logs whose series has settled.
+
+**Why.** The rules are written about the live interface and say so. App. E rule 8 is *"the **live**
+user interface must display local truth only"*; rule 9 is *"never display the full objective board
+state in the **live** UI"*. The harm both name is an **illegal advantage during play** — knowledge
+reaching an agent that the protocol did not give it. Four independent reasons say the replay is
+outside that harm:
+
+1. **It is post-audit.** A replay frame is only built after both sides exchanged reveals and the
+   window settled. No decision can be influenced by it, because there is no game left to decide.
+2. **The positions were revealed by the protocol itself.** The audit stage (rules 19, 36) *requires*
+   each side to hand the other its full sealed trail. A replay board shows the opponent nothing
+   they were not already given — refusing to draw what they already hold protects no secret.
+3. **Every frame is rebuilt from sealed logs and re-verified.** `frames.py` recomputes
+   `SHA256(canonical_json(payload) + "|" + nonce)` for each record before drawing it, so the
+   bird's-eye view is not a second source of truth but a rendering of the audited one — and the
+   per-step `Verified OK / TAMPERED` stamps are themselves the rule-20 deliverable.
+4. **The book ships the same thing.** Rule 20 mandates *"a viewer application for replaying and
+   verifying the game log"*, and the ch. 7 Replay App is retrospective by construction; §9 lists
+   its `Verified OK` screenshot as an absolute submission must. A replay that could not show the
+   game would not be a replay.
+
+Read the other way — rules 8–9 as covering any render, ever — rule 20 and rule 8 would
+contradict each other and the mandatory screenshot would be unobtainable. Under the academic-
+freedom clause we take the reading that keeps both rules satisfiable, and we state it here
+rather than leaving it implicit. The Phase-11B sentence is therefore amended in one word: the
+console rail applies to **live** rendering; settled-game replay is exempt, and only there.

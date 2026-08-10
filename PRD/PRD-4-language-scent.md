@@ -10,9 +10,11 @@ hints ≤15 words, LLM-authored with a zero-token fallback that guarantees every
 
 **In:** wiring vendored `protocol/scent.py` into the turn loop (emit / merge-by-max / deposit-then-
 decay / receiver-side decay), `hints/templates.py` (arena-aware canned truths/lies, role persona),
-`hints/gemini.py` (google-genai `gemini-2.5-flash`, 5 s timeout, metered), `hints/liar_score.py`
-(per-opponent hint-truthfulness vs scent-derived ground truth), coordinate-regex lint, hard 15-word
-truncation, intent flagging, token metering per sub-game/series.
+`hints/gemini.py` (google-genai, model + timeout from `peer.toml [trash_talk]`, metered; the
+endpoint refuses any deadline under 10 s, so shorter values are clamped up, never obeyed),
+`hints/liar_score.py` (per-opponent hint-truthfulness vs scent-derived ground truth),
+coordinate-regex lint, hard 15-word truncation, intent flagging MEASURED against the cell we
+seal, token metering per sub-game/series with the negotiated series budget as a hard stop.
 
 **Out:** the scent-model *math* itself (vendored, PRD-6 conformance), tracker consumption (PRD-3).
 

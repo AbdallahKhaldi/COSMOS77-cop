@@ -6,7 +6,7 @@
 - Agent email (automated reports): [FILL — the Gmail account that sends the automated reports; goes on the Moodle form]
 - Cop repository: https://github.com/AbdallahKhaldi/COSMOS77-cop
 - Thief repository: https://github.com/AbdallahKhaldi/COSMOS77-thief
-- LLM model: gemini-2.5-flash
+- LLM model: gemini-3.5-flash-lite
 - Self-grade (CODE QUALITY ONLY, rule 55): **90**
 - Bonus eligibility: **No**
 

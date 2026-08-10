@@ -17,6 +17,7 @@ from ..net.server import KIND_NEGOTIATE, PeerInbox, build_server
 from ..protocol.ids import artifact_filenames, game_id
 from .brainbridge import ROLE, BrainBridge
 from .gateway import Gateway
+from .hintconf import hint_setup
 from .peerconf import PeerConfig
 from .serieslog import note_peer_repos, sealed_step0, write_window_log
 from .turnloop import SubGameReport, play_sub_game
@@ -74,13 +75,16 @@ class SeriesDriver:
         self.hardware = hardware or {}
         self.inbox = PeerInbox(peer_cfg.queue_depth)
         self.mcp = build_server(self.inbox, f"cosmos77-series-{ROLE}")
-        self.client = PeerClient(peer_cfg.opponent_url)
+        self.client = PeerClient(
+            peer_cfg.opponent_url, connect_timeout_s=peer_cfg.connect_timeout_s
+        )
         self.reports: list[SubGameReport] = []
         self.writer = writer
         self.peer_identity: dict[str, Any] | None = None
-        self.alternate_labels = alternate_labels
-        self.scent_model = scent_model
+        self.alternate_labels, self.scent_model = alternate_labels, scent_model
         self.view_attachment = view_attachment
+        self.hints = hint_setup(peer_cfg)  # resolved ONCE: what we run is what we declare
+        self.tokens_spent = 0
 
     def window_roles(self, window: int) -> tuple[str, str]:
         """(police_gid, thief_gid) for *window* under this series' topology.
@@ -128,6 +132,8 @@ class SeriesDriver:
             every_n=self.peer_cfg.hint_every_n_steps,
             lie_rate=self.peer_cfg.hint_lie_rate,
             scent_model=self.scent_model,
+            setup=self.hints,
+            tokens_spent=self.tokens_spent,
         )
         bridge = BrainBridge(state)
         if self.view_attachment is not None:
@@ -135,6 +141,7 @@ class SeriesDriver:
             self.view_attachment.attach(bridge, window)
         step0 = sealed_step0(self, gateway.group_id, window)
         report = play_sub_game(gateway, state, kit, bridge, step0)
+        self.tokens_spent += report.tokens
         self.reports.append(report)
         if self.peer_identity is None and gateway.peer_greeting is not None:
             self.peer_identity = gateway.peer_greeting

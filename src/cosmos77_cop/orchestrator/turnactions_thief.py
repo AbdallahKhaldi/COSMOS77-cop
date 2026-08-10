@@ -46,7 +46,7 @@ def thief_act(
             win = {"type": "survival"}
             state.finish("survival", "thief", "reached the survival threshold")
             verdict = VERDICT_SETTLED
-    hint = kit.hints.hint_for_step(step, sub_game)
+    hint = kit.hints.hint_for_step(step, sub_game, cell=state.my_pos)
     record, message = seal_and_wire(
         state, kit, step=step, sub_game=sub_game, move_token=move_token,
         verdict=verdict, intent=hint.intent, hint=hint.text,
@@ -62,7 +62,7 @@ def thief_concede(
     """The obligatory rule-46/47 concession final (playbook §0.5): name our own cell, settle."""
     state.finish("capture", "police", state.ending.reason if state.ending else "boxed in (rule 47)")
     response = capture.concession_payload(state.my_pos)
-    hint = kit.hints.hint_for_step(step, sub_game)
+    hint = kit.hints.hint_for_step(step, sub_game, cell=state.my_pos)
     return seal_and_wire(
         state, kit, step=step, sub_game=sub_game, move_token="STAY",
         verdict=VERDICT_SETTLED, intent=INTENT_TRUTH, hint=hint.text,

@@ -11,7 +11,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .engine.config import signed_value
 from .orchestrator.peerconf import load_peer_config
+
+GATEKEEPER = "rate_limiter_gatekeeper"
 
 
 def _advance_ledger(body: dict[str, Any], root: str) -> int:
@@ -65,7 +68,10 @@ def report_cmd(
         return 2
     targets = recipients_for(posture)
     peer = load_peer_config("config/peer.toml")
-    keeper = Gatekeeper.from_config(30, peer.mail_burst_capacity, peer.mail_daily_cap)
+    # ADR-004: the refill rate is the SIGNED requests_per_minute the opponent relies on; only
+    # the burst and the daily cap are ours. A literal here made the docstring a lie (§0.14).
+    rpm = int(signed_value(GATEKEEPER, "requests_per_minute"))
+    keeper = Gatekeeper.from_config(rpm, peer.mail_burst_capacity, peer.mail_daily_cap)
     message = build_message(
         sender="me",
         recipients=targets,

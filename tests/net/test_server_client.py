@@ -107,3 +107,33 @@ def test_wire_messages_roundtrip_with_explicit_nulls():
     control = ControlMessage(kind="quit", sender="police")
     assert ControlMessage.from_wire(control.to_wire()) == control
     assert turn.timestamp != ""
+
+
+def test_the_private_connect_budget_reaches_the_tcp_handshake():
+    """`connect_timeout_s` was a knob with zero reads: PeerClient only ever took `deadline_s`,
+    so a cold tunnel blocked for the whole turn budget instead of failing fast."""
+    import json
+    from pathlib import Path
+
+    import httpx
+
+    from cosmos77_cop.engine.config import from_dict
+    from cosmos77_cop.net.client import http_client_factory
+    from cosmos77_cop.orchestrator.gateway import Gateway
+    from cosmos77_cop.orchestrator.peerconf import PeerConfig
+
+    built = http_client_factory(3.5)(headers=None, timeout=httpx.Timeout(30.0), auth=None)
+    assert built.timeout.connect == 3.5
+    assert built.timeout.read == 30.0 and built.timeout.write == 30.0
+    assert http_client_factory(2.0)().timeout.connect == 2.0
+    assert PeerClient("http://peer/mcp", connect_timeout_s=7.0).connect_timeout_s == 7.0
+
+    # The real dialer a real game builds carries the configured budget, not a default.
+    repo = Path(__file__).resolve().parents[2]
+    raw = json.loads((repo / "config" / "game.json").read_text(encoding="utf-8"))
+    peer = PeerConfig(connect_timeout_s=4.0)
+    gateway = Gateway(
+        game_cfg=from_dict(raw), peer_cfg=peer, role="police", group_id="cosmos77",
+        group_name="cosmos77", opponent_group_id="rival",
+    )
+    assert gateway.client.connect_timeout_s == 4.0

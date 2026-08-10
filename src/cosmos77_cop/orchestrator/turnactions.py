@@ -122,26 +122,26 @@ class CopActionLike(Protocol):
 
 
 def police_act(
-    state: TurnState,
-    kit: SideKit,
-    *,
-    step: int,
-    sub_game: int,
-    brain_action: CopActionLike,
+    state: TurnState, kit: SideKit, *, step: int, sub_game: int, brain_action: CopActionLike
 ) -> tuple[dict, TurnMessage]:
-    """Convert a CopAction into an engine change + sealed wire turn."""
-    hint = kit.hints.hint_for_step(step, sub_game)
+    """Convert a CopAction into an engine change + sealed wire turn.
+
+    The hint is authored AFTER the position update, so its measured ``intent`` describes the
+    very cell this payload seals rather than where we stood a moment ago.
+    """
     if brain_action.kind == "barrier":
         cell = brain_action.barrier_cell
         state.board.add_barrier(cell)
         state.barriers_left -= 1
         state.my_moves += 1
+        hint = kit.hints.hint_for_step(step, sub_game, cell=state.my_pos)
         return seal_and_wire(
             state, kit, step=step, sub_game=sub_game, move_token="STAY",
             verdict=VERDICT_BARRIER, intent=hint.intent, hint=hint.text, barrier_placed=cell,
         )
     state.my_pos = apply_move(state.board, state.my_pos, brain_action.move_token)
     state.my_moves += 1
+    hint = kit.hints.hint_for_step(step, sub_game, cell=state.my_pos)
     return seal_and_wire(
         state, kit, step=step, sub_game=sub_game, move_token=brain_action.move_token,
         verdict=VERDICT_MOVED, intent=hint.intent, hint=hint.text,

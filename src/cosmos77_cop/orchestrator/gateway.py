@@ -17,6 +17,7 @@ from ..protocol.locks import OUR_LOCKS, REGISTERED
 from ..protocol.terms import terms_from_config
 from . import identity
 from .deadline import DeadlineClock
+from .hintconf import hint_setup
 
 
 class Gateway:
@@ -56,7 +57,7 @@ class Gateway:
         self.identity: dict[str, Any] = {
             "group_id": group_id,
             "group_name": group_name,
-            "llm_model": identity.LLM_MODEL,
+            "llm_model": hint_setup(peer_cfg).declared_model,
             "mcp_servers": {"self": public_url or f"http://127.0.0.1:{peer_cfg.my_port}/mcp"},
             "repos": dict(identity.TEAM_REPOS),
             "members": list(identity.MEMBER_IDS),
@@ -65,7 +66,9 @@ class Gateway:
             self.identity["counted_games_played"] = int(counted_games_played)
         self.inbox = inbox or PeerInbox(peer_cfg.queue_depth)
         self.mcp = build_server(self.inbox, f"cosmos77-{role}")
-        self.client = client or PeerClient(peer_cfg.opponent_url)
+        self.client = client or PeerClient(
+            peer_cfg.opponent_url, connect_timeout_s=peer_cfg.connect_timeout_s
+        )
         self.receiver = Receiver(peer_cfg.reorder_window)
         self.machine = StateMachine()
         self.clock = DeadlineClock(0.0)
