@@ -50,6 +50,30 @@ def test_friendly_counts_stay_all_null_and_first_meeting_stays_truthful():
     assert final["first_meeting_between_groups"] is False
 
 
+def test_the_opponents_token_count_is_null_not_zero():
+    """Kit SPEC §6.2: null is UNCLAIMED, 0 is a claim. We meter our own consumption; the
+    opponent's is unknowable from here, so a hardcoded 0 was a false measurement."""
+    from cosmos77_cop.crypto.settle import Settlement
+    from cosmos77_cop.orchestrator.subreport import SubGameReport
+    from cosmos77_cop.report.rows import row_from_report
+
+    report = SubGameReport(
+        sub_game_number=1, my_role="police", result="capture", reason="caught", steps=3,
+        started_at="t0", ended_at="t1", records=[], opp_records=[], tokens=1234,
+        settlement=Settlement(True, "capture", True, False),
+    )
+    built = row_from_report(
+        report, cfg=CFG, police_gid="cosmos77", thief_gid="rival", gid="a-vs-b",
+        my_gid="cosmos77", opp_gid="rival", my_commit="a" * 40,
+    )
+    assert built["tokens"] == {"cosmos77": 1234, "rival": None}
+    final = final_result_block(
+        [built], cfg=CFG, gid_a="cosmos77", gid_b="rival", counted=False, my_gid="cosmos77",
+    )
+    assert final["tokens_total_series"] == {"cosmos77": 1234, "rival": None}
+    assert json.loads(canonical_bytes(final))["tokens_total_series"]["rival"] is None
+
+
 def test_first_meeting_reads_the_committed_ledger(tmp_path):
     assert first_meeting("rival", str(tmp_path)) is True
     ledger = Ledger.load(tmp_path / "artifacts" / "league_ledger.json")
@@ -57,8 +81,9 @@ def test_first_meeting_reads_the_committed_ledger(tmp_path):
     assert first_meeting("rival", str(tmp_path)) is False
 
 
+@patch("cosmos77_cop.arming.is_dirty", return_value=False)
 @patch("cosmos77_cop.arming.has_credentials", return_value=True)
-def test_counted_arming_refuses_a_repeat_opponent(_creds, tmp_path):
+def test_counted_arming_refuses_a_repeat_opponent(_creds, _dirty, tmp_path):
     ledger = Ledger.load(tmp_path / "artifacts" / "league_ledger.json")
     ledger.record(opponent="rival", game_id="g", game_uid="u", won=True, settled_at="t")
     with pytest.raises(ArmingError, match="rule 52"):

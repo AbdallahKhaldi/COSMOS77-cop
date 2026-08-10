@@ -8,7 +8,7 @@ from __future__ import annotations
 
 GROUP_ID = "cosmos77"
 GROUP_NAME = "cosmos77"
-LLM_MODEL = "gemini-2.5-flash"
+LLM_MODEL = "gemini-3.5-flash-lite"  # documented default; peer.toml [trash_talk] model overlays
 MEMBER_IDS = ["323118794", "212389712"]
 TEAM_REPOS = {
     "cop": "https://github.com/AbdallahKhaldi/COSMOS77-cop",

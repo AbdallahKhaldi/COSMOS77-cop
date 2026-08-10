@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .crypto.step0 import is_dirty
 from .report.gmail import has_credentials
 from .report.ledger import LEDGER_FILE, Ledger
 from .report.recipients import ArmingError, Posture, assert_deliverable
@@ -23,9 +24,14 @@ __all__ = ["ArmingError", "declared_count", "first_meeting", "serve_posture"]
 def serve_posture(
     *, config_counted: bool, cli_counted: bool, opponent: str | None = None, root: str = "."
 ) -> Posture:
-    """Resolve the run posture, refusing half-armed, undeliverable, or rule-52-repeat runs."""
+    """Resolve the run posture, refusing half-armed, dirty, undeliverable or repeat runs."""
     posture = Posture(config_counted=config_counted, cli_counted=cli_counted)
     assert_deliverable(posture, has_credentials=has_credentials(root), settled=True)
+    if posture.counted and is_dirty(root):
+        raise ArmingError(
+            "rule 53: the working tree is dirty, so the commit this run would seal into every "
+            "step-0 record is NOT the code playing — commit or stash before arming"
+        )
     if posture.counted and opponent and Ledger.load(Path(root) / LEDGER_FILE).has_played(opponent):
         raise ArmingError(
             f"rule 52: a counted series against {opponent} is already recorded; only one counts"

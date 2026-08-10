@@ -27,6 +27,17 @@ Our permanent public home: **https://cosmos77-arena-production.up.railway.app** 
 endpoint: `https://cosmos77-arena-production.up.railway.app/cop/mcp` (single-URL opponents dial `https://cosmos77-arena-production.up.railway.app/mcp`). Compatibility self-test for
 any team: the doctor card on `https://cosmos77-arena-production.up.railway.app/docs`, or locally `uv run cosmos-cop doctor --json --url …`.
 
+**What each surface may show (rules 8–9).** Every *live* surface — the Tkinter window, the arena's
+3D live page, the local `console/` ops panel — renders ONE agent's local truth: our cell, the
+barriers we have seen declared, the scent we perceive, and the opponent only as a labelled
+BELIEF. The **bird's-eye view exists solely in the replay cinema, after a game has settled**: its
+frames are rebuilt from the sealed logs both sides revealed at audit and re-verified per step
+(`Verified OK` / `TAMPERED`), which is the rule-20 artifact itself. Rules 8–9 govern the *live*
+interface — rule 8 says "the **live** user interface must display local truth only", rule 9 "never
+display the full objective board state in the **live** UI" — and the reasoning for reading them
+that way, including why the opposite reading would make rule 20 unsatisfiable, is recorded as
+**ADR-009** in [docs/DECISIONS.md](docs/DECISIONS.md).
+
 ## 1. The model: a Dec-POMDP, and why ours is nearly observable
 
 ### 1.1 The formal model

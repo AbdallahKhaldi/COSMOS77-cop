@@ -111,4 +111,10 @@ def audit_records(
     notes += physics_notes
     if physics_steps:
         return AuditReport(VERDICT_ILLEGAL, sorted(set(physics_steps)), notes)
-    return AuditReport(VERDICT_VERIFIED, [], notes)
+    # A clean verdict states what it actually checked: "verified" with no notes is
+    # indistinguishable in an artifact from an audit that examined nothing.
+    passed = (
+        f"layers 1-3 verified {len(records)} revealed records against "
+        f"{len(received_commits)} commits received in play"
+    )
+    return AuditReport(VERDICT_VERIFIED, [], [*notes, passed])

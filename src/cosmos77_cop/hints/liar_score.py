@@ -40,6 +40,22 @@ def direction_matches(direction: str, cell: Coord, grid_size: int) -> bool:
     }[direction]
 
 
+def declared_intent(text: str, cell: Coord, grid_size: int, bluff: str) -> str:
+    """The intent *text* may honestly seal with, given the cell we are ACTUALLY on (§4.5).
+
+    A line committing to a compass direction is checkable with the very predicates we score
+    opponents by: it is a truth exactly when the direction names our own half, whichever pool the
+    bluff policy drew it from. A line committing to nothing is not falsifiable, so it keeps the
+    policy's own label — deliberate misdirection is never relabelled ``truth`` for being vacuous.
+    Never derived before the text exists: a bluff recorded as truth is tampering (§2.2), and a
+    truth recorded as a bluff broadcasts our real half for free.
+    """
+    direction = hinted_direction(text)
+    if direction is None:
+        return bluff
+    return "truth" if direction_matches(direction, cell, grid_size) else "lie"
+
+
 class LiarScore:
     """Exponentially-updated truthfulness in [0, 1]; 0.5 = uncalibrated."""
 

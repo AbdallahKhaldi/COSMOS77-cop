@@ -1,8 +1,10 @@
 """Zero-token hint pool: arena-aware natural language, digit-free, <= 15 words (rules 26-27).
 
 The template layer is the guarantee that every sub-game finishes — any Gemini failure lands here.
-``truth`` lines are generic and vacuously honest; ``lie`` lines assert directions we are not in
-(the caller pairs them with the real bluff policy).
+``truth`` lines are generic and vacuously honest — NONE of them may make a checkable positional
+claim, or the measured intent flag would seal ``truth`` on a false statement the moment the pool
+picked it from the wrong cell. ``lie`` lines assert directions we are not in (the caller pairs
+them with the real bluff policy and then measures what actually came out).
 """
 
 from __future__ import annotations
@@ -12,7 +14,7 @@ import random
 TRUTHS: tuple[str, ...] = (
     "Still on the move, same as every turn in {arena}.",
     "No tricks this round, just steady footwork through {arena}.",
-    "Keeping my options open near the middle of {arena}.",
+    "Keeping my options open, the way {arena} teaches you to.",
     "One step at a time; {arena} rewards the patient.",
     "Honest answer: exactly where the trail says I am.",
 )

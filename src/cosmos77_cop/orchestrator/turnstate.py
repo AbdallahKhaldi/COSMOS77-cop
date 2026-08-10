@@ -12,10 +12,11 @@ from typing import Any
 
 from ..engine.board import Board, Coord
 from ..engine.config import GameConfig
-from ..hints.gemini import HintMeter
+from ..hints.gemini import GeminiHinter, HintMeter
 from ..hints.liar_score import LiarScore
 from ..hints.provider import HintProvider
 from ..strategy.tracker import Tracker
+from .hintconf import HintSetup
 from .scentflow import SUBTRACTIVE, ScentFlow
 
 
@@ -90,10 +91,13 @@ class SideKit:
         every_n: int = 1,
         lie_rate: float = 0.75,
         scent_model: str | None = None,
+        setup: HintSetup | None = None,
+        tokens_spent: int = 0,
     ) -> SideKit:
-        """Build the standard kit for one sub-game (template hints; Gemini attaches later)."""
-        meter = HintMeter()
+        """Build the standard kit for one sub-game; Gemini attaches iff configured AND keyed."""
+        meter = HintMeter(carried=tokens_spent)
         model = scent_model or SUBTRACTIVE
+        live = setup.live if setup else False
         return cls(
             flow=ScentFlow(cfg, model),
             tracker=Tracker(exact_capable=model == SUBTRACTIVE),
@@ -101,6 +105,12 @@ class SideKit:
                 role=role,
                 arena=cfg.map_area,
                 max_words=cfg.hint_max_words,
+                grid_size=cfg.grid_size,
+                token_budget=cfg.token_budget_per_series,
+                gemini=(
+                    GeminiHinter(setup.api_key, setup.model, meter, setup.timeout_s)
+                    if live else None
+                ),
                 every_n_steps=every_n,
                 lie_rate=lie_rate,
                 seed=seed,

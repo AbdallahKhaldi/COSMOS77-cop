@@ -1,5 +1,15 @@
 # Copy to config/peer.toml (gitignored) and adjust per machine. Private, never negotiated,
-# never signed (App. B). When config/game.json exists, its values override any parallel key.
+# never signed (App. B). Precedence, tightest last:
+#   dataclass default < environment variable < config/peer.toml < the SIGNED config/game.json.
+# A deployed image clones from GitHub and therefore has NO peer.toml — there these variables
+# stand in: COSMOS_TRASH_PROVIDER, COSMOS_TRASH_MODEL, COSMOS_LEAGUE_COUNTED (the run-side half
+# of the counted arming; `serve --counted` on a TTY is still the other half).
+# The signed constitution then wins on exactly the parallel keys the two teams agreed:
+#   network_and_league.response_timeout_sec  -> [network] turn_timeout_seconds
+#   network_and_league.watchdog_timeout_sec  -> [network] watchdog_seconds
+#   rate_limiter_gatekeeper.queue_depth      -> [network] queue_depth
+# The mailbox knobs below are deliberately NOT overridden — ADR-004: the opponent relies on our
+# request rate, never on how many mails our own account will send in a day.
 
 [network]
 my_port = 8801
@@ -14,8 +24,25 @@ handshake_budget_seconds = 60
 
 [trash_talk]
 provider = "template"   # template (0 tokens) | gemini
+# Measured 2026-08-10 on the real API with this project's taunt prompt: the 2.5/3.x *flash*
+# models THINK before answering — 7-9 s and 1170-1650 tokens for an eleven-word taunt, i.e. past
+# our client timeout on every call. flash-lite answers in ~0.8 s for ~81 tokens. Never send
+# thinkingConfig to a 3.x model: the API rejects it with HTTP 400.
+model = "gemini-3.5-flash-lite"
+# The endpoint REFUSES a deadline under 10 s (HTTP 400), so anything shorter is not "fast", it is
+# a permanent silent fallback to templates. Values below the floor are clamped up, never obeyed.
+timeout_seconds = 12
 every_n_steps = 3
 lie_rate = 0.75
+
+# Strategy tunables. Set ONLY the keys you want to move: strategy/params.py owns every default
+# and nothing here may restate one (playbook §0.14). Unset keys stay at the played configuration.
+[strategy]
+# claim_threshold = 0.9
+# reserve_barriers = 2
+# taboo_distance = 1
+# escape_horizon = 3
+# place_range = 3
 
 # Private mailbox policy. The token bucket's REFILL RATE derives from the signed
 # rate_limiter_gatekeeper.requests_per_minute in game.json; only the burst and the daily cap are

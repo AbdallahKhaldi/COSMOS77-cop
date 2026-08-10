@@ -184,6 +184,7 @@ def test_building_regime_fires_from_a_bare_board():
 
 
 def _solver_duel(thief_start, max_moves=35, quota=14):
+    solver.clear_cache()  # one memo per duel: 48 duels of accumulated tables is gigabytes
     board = Board(7)
     cop, thief = (0, 0), thief_start
     left = quota
@@ -220,13 +221,28 @@ def is_rule47_boxed_(board, thief):
     return is_rule47_boxed(board, thief)
 
 
-@pytest.mark.parametrize(
-    ("thief_start", "converts"), [((3, 3), False), ((6, 6), True), ((2, 5), True)]
-)
-def test_cop_genuinely_builds_walls_against_a_distance_keeping_thief(thief_start, converts):
-    """Re-frozen Phase-8 regression: vs the solver evader the cop must actually place walls
-    (it previously placed 0/35 and lost every such duel — the audit's dead-regime finding)."""
+SOLVER_STARTS = [(r, c) for r in range(7) for c in range(7) if (r, c) != (0, 0)]
+
+
+def test_cop_genuinely_builds_walls_against_a_distance_keeping_thief():
+    """Re-frozen Phase-8 regression, now AGGREGATE over every legal thief start.
+
+    Vs the solver evader the cop must actually place walls (it once placed 0/35 and lost
+    every such duel — the audit's dead-regime finding) and must convert the sweep, not one
+    lucky seed. Measured at the freeze: 45/48 captures, minimum 12 barriers placed. The
+    floor is set below the measurement so honest tie-break drift cannot go red, but far
+    above the 32/48 the pre-A1 ranking key scored — a regression cannot hide inside it.
+    """
+    results = [_solver_duel(start) for start in SOLVER_STARTS]
+    captures = sum(1 for outcome, _moves, _placed in results if outcome == "capture")
+    assert captures >= 40, f"solver-evader capture rate fell to {captures}/{len(SOLVER_STARTS)}"
+    thinnest = min(placed for _outcome, _moves, placed in results)
+    assert thinnest >= 3, f"some duel placed only {thinnest} barriers vs the solver thief"
+
+
+@pytest.mark.parametrize("thief_start", [(3, 3), (2, 5)])
+def test_cop_converts_the_named_solver_starts(thief_start):
+    """The two pinned starts that survive the aggregate: (3,3) is the constitution's default."""
     outcome, _moves, placed = _solver_duel(thief_start)
+    assert outcome == "capture", f"cop no longer converts the solver thief from {thief_start}"
     assert placed >= 3, f"cop placed only {placed} barriers vs solver thief from {thief_start}"
-    if converts:
-        assert outcome == "capture", f"cop no longer converts the solver thief from {thief_start}"

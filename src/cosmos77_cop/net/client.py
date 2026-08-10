@@ -1,7 +1,10 @@
 """The dialing MCP client: one held session, re-established once per call on failure (SPEC §8).
 
 Both sides dial each other. The async fastmcp client lives on a dedicated event-loop thread;
-every call carries a hard deadline — expiry raises instead of hanging (rule 6).
+every call carries a hard deadline — expiry raises instead of hanging (rule 6). The private
+``connect_timeout_s`` budget is applied where it means something: the TCP handshake. A peer whose
+tunnel is cold must fail fast enough to leave the turn deadline room to retry, and the reconciled
+invariant ``connect <= turn`` only protects us if the connect phase actually obeys its number.
 """
 
 from __future__ import annotations
@@ -12,11 +15,36 @@ import threading
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+import httpx
 from fastmcp import Client
+from fastmcp.client.transports import StreamableHttpTransport
+from mcp.shared._httpx_utils import create_mcp_http_client
+
+DEFAULT_CONNECT_TIMEOUT_S = 10.0
 
 
 class PeerCallError(RuntimeError):
     """A tool call that failed or blew its deadline (controlled, never a hang)."""
+
+
+def http_client_factory(connect_timeout_s: float) -> Callable[..., httpx.AsyncClient]:
+    """An MCP http-client factory whose CONNECT phase obeys the private budget."""
+
+    def build(
+        headers: dict[str, str] | None = None,
+        timeout: httpx.Timeout | float | None = None,
+        auth: httpx.Auth | None = None,
+    ) -> httpx.AsyncClient:
+        base = timeout if isinstance(timeout, httpx.Timeout) else httpx.Timeout(timeout)
+        return create_mcp_http_client(
+            headers=headers,
+            timeout=httpx.Timeout(
+                connect=connect_timeout_s, read=base.read, write=base.write, pool=base.pool
+            ),
+            auth=auth,
+        )
+
+    return build
 
 
 class PeerClient:
@@ -27,9 +55,17 @@ class PeerClient:
         url: str,
         *,
         transport_factory: Callable[[], Client] | None = None,
+        connect_timeout_s: float = DEFAULT_CONNECT_TIMEOUT_S,
     ) -> None:
         """Dial *url*; tests may inject an in-memory fastmcp transport instead."""
-        self._factory = transport_factory or (lambda: Client(url))
+        self.connect_timeout_s = connect_timeout_s
+        self._factory = transport_factory or (
+            lambda: Client(
+                StreamableHttpTransport(
+                    url, httpx_client_factory=http_client_factory(connect_timeout_s)
+                )
+            )
+        )
         self._loop: asyncio.AbstractEventLoop | None = None
         self._client: Client | None = None
 

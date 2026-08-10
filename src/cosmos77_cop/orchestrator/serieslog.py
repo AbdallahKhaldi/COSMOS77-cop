@@ -11,6 +11,25 @@ from ..report.rows import row_from_report
 from .brainbridge import ROLE
 from .subreport import SubGameReport
 
+NO_AUDIT = "the opponent's reveal never arrived; there was nothing to verify"
+
+
+def audit_block(report: SubGameReport) -> dict[str, Any]:
+    """The audit's VERDICT as evidence, not merely its boolean shadow (layers 1-4).
+
+    ``log_verified: true`` alone tells a grader nothing about what the four layers examined or
+    what they would have said had a step failed. The verdict, the failing steps and the notes
+    are the audit's actual output; a window whose peer never revealed carries a null verdict
+    rather than a silent ``false``, which would read as an accusation.
+    """
+    verdict = report.my_audit
+    return {
+        "verdict": verdict.verdict if verdict else None,
+        "failed_steps": list(verdict.failed_steps) if verdict else [],
+        "notes": list(verdict.notes) if verdict else [NO_AUDIT],
+        "their_audit_arrived": bool(report.their_audit_arrived),
+    }
+
 
 def write_window_log(driver: object, window: int, report: SubGameReport) -> None:
     """Write the per-sub-game log, embedding the result row the closer may need."""
@@ -30,6 +49,7 @@ def write_window_log(driver: object, window: int, report: SubGameReport) -> None
             "settled": bool(settlement and settlement.settled),
             "log_verified": bool(settlement and settlement.log_verified),
             "tampered": bool(settlement and settlement.tampered),
+            "audit": audit_block(report),
             "equivocations": report.equivocations,
             "violations": report.violations,
             "tracker_trace": report.tracker_trace,
@@ -66,7 +86,7 @@ def sealed_step0(driver: object, group_id: str, window: int) -> dict[str, Any]:
     payload = build_step0(
         sub_game_number=window,
         group_name=group_id,
-        model="gemini-2.5-flash",
+        model=driver.hints.declared_model,
         code_version=driver.code_version,
         num_games_declared=driver.num_games_declared,
         spec=driver.hardware,

@@ -48,7 +48,9 @@ def row_from_report(
         "tie": False,
         "steps": report.steps,
         "github_commit": commits,
-        "tokens": {my_gid: report.tokens, opp_gid: 0},
+        # OUR count is measured; theirs is UNCLAIMED, and kit SPEC §6.2 is explicit that null
+        # is not 0 — a hardcoded 0 asserts the opponent spent no tokens, which we cannot know.
+        "tokens": {my_gid: report.tokens, opp_gid: None},
         "score": row_score(result, police_gid, thief_gid, cfg.scoring),
         "log_files": {my_gid: log_name, opp_gid: log_name},
         "audit": {
@@ -56,6 +58,12 @@ def row_from_report(
             "tampered": bool(settlement and settlement.tampered),
         },
     }
+
+
+def _series_tokens(rows: list[dict[str, Any]], gid: str) -> int | None:
+    """Sum only the MEASURED per-row counts; a group we never measured stays null (§6.2)."""
+    measured = [int(v) for r in rows if (v := (r.get("tokens") or {}).get(gid)) is not None]
+    return sum(measured) if measured else None
 
 
 def final_result_block(
@@ -73,11 +81,13 @@ def final_result_block(
 
     ``games_played_including_this``: OUR count is the declaration's exclusive ledger count
     + 1 (the §2.10 identity); the OPPONENT'S is null — never fabricated (kit SPEC §6.2,
-    "null is not 0/1"). ``first_meeting_between_groups`` is the rule-52 ledger's answer.
+    "null is not 0/1"). ``tokens_total_series`` follows the same rule: we meter our own
+    consumption, we cannot meter theirs, and a fabricated 0 would be a false measurement.
+    ``first_meeting_between_groups`` is the rule-52 ledger's answer.
     """
     groups = sorted([gid_a, gid_b])
     agg = apply_series_tie_rule(aggregate(rows, groups), cfg.scoring["tie_score"])
-    tokens = {g: sum(int(r["tokens"].get(g, 0)) for r in rows) for g in groups}
+    tokens = {g: _series_tokens(rows, g) for g in groups}
     winner = agg["winner_group"]
     counts: dict[str, int | None] = dict.fromkeys(groups)
     if counted and my_gid in counts:

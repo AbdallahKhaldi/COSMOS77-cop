@@ -135,7 +135,7 @@ def play_sub_game(
         started_at=started,
         ended_at=now_iso(),
         records=list(gateway.records),
-        tokens=kit.meter.total_series,
+        tokens=kit.meter.total_sub_game,
         tracker_trace=list(state.tracker_trace),
     )
     surface_wire_evidence(gateway, state, report)

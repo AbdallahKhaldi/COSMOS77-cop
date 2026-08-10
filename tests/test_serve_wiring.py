@@ -70,11 +70,34 @@ def test_fully_armed_serve_writes_a_counted_artifact_set(tmp_path):
     with (
         patch("cosmos77_cop.commands_play.load_peer_config", return_value=armed_cfg),
         patch("cosmos77_cop.arming.has_credentials", return_value=True),
+        patch("cosmos77_cop.arming.is_dirty", return_value=False),
     ):
         assert run_serve(tmp_path, calls, counted=True) == 0
     writer = calls["driver"]["writer"]
     assert writer.league["counted"] is True and writer.league["reason"] == "counted"
     assert calls["driver"]["num_games_declared"] == 3
+
+
+def test_a_dirty_tree_refuses_the_counted_run_before_binding_a_port(tmp_path, capsys):
+    """Rule 53: step-0 seals `git rev-parse HEAD`, so uncommitted code would be played under a
+    commit that is not it. The friendly path is untouched by the same tree."""
+    calls = {}
+    armed_cfg = dataclasses.replace(PeerConfig(), league_counted=True)
+    with (
+        patch("cosmos77_cop.commands_play.load_peer_config", return_value=armed_cfg),
+        patch("cosmos77_cop.arming.has_credentials", return_value=True),
+        patch("cosmos77_cop.arming.is_dirty", return_value=True),
+    ):
+        assert run_serve(tmp_path, calls, counted=True) == 2
+        assert "rule 53" in capsys.readouterr().out
+        assert "driver" not in calls and not calls["server"].called
+    calls = {}
+    with (
+        patch("cosmos77_cop.commands_play.load_peer_config", return_value=PeerConfig()),
+        patch("cosmos77_cop.arming.is_dirty", return_value=True),
+    ):
+        assert run_serve(tmp_path, calls, counted=False) == 0
+    assert calls["driver"]["writer"].league["counted"] is False
 
 
 def test_friendly_serve_stays_exactly_disarmed_but_declares_truthfully(tmp_path):

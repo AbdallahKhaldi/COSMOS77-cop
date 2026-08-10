@@ -67,7 +67,7 @@ def decide_exact(
             return CopAction("barrier", barrier_cell=winning)
     near = abs(cop[0] - thief[0]) + abs(cop[1] - thief[1]) <= params.place_range
     if barriers_left > params.reserve_barriers and near:
-        placement = best_placement(board, cop, thief, params.cut_threshold)
+        placement = best_placement(board, cop, thief)
         if placement is not None:
             return CopAction("barrier", barrier_cell=placement)
     target = herd_cell(board, thief)

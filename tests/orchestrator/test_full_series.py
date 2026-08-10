@@ -127,7 +127,12 @@ def test_two_window_series_settles_with_clean_audits(tmp_path):
         assert report.settlement is not None and report.settlement.settled
         assert report.settlement.log_verified and not report.settlement.tampered
         assert report.my_audit is not None and report.my_audit.clean
-    assert (tmp_path / "ours" / f"log_{driver.gid}_g01.json").exists()
+    log_path = tmp_path / "ours" / f"log_{driver.gid}_g01.json"
+    assert log_path.exists()
+    # The audit verdict is EVIDENCE in the artifact of a really-played game, not just a boolean.
+    written = json.loads(log_path.read_text(encoding="utf-8"))["summary"]["audit"]
+    assert written["verdict"] == "verified" and written["failed_steps"] == []
+    assert written["their_audit_arrived"] is True and written["notes"]
     summary = finish_series(
         driver,
         writer,
