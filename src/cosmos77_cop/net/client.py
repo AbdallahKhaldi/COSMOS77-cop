@@ -15,36 +15,18 @@ import threading
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-import httpx
 from fastmcp import Client
 from fastmcp.client.transports import StreamableHttpTransport
-from mcp.shared._httpx_utils import create_mcp_http_client
+
+from .httpfactory import http_client_factory
 
 DEFAULT_CONNECT_TIMEOUT_S = 10.0
+
+__all__ = ["DEFAULT_CONNECT_TIMEOUT_S", "PeerCallError", "PeerClient", "http_client_factory"]
 
 
 class PeerCallError(RuntimeError):
     """A tool call that failed or blew its deadline (controlled, never a hang)."""
-
-
-def http_client_factory(connect_timeout_s: float) -> Callable[..., httpx.AsyncClient]:
-    """An MCP http-client factory whose CONNECT phase obeys the private budget."""
-
-    def build(
-        headers: dict[str, str] | None = None,
-        timeout: httpx.Timeout | float | None = None,
-        auth: httpx.Auth | None = None,
-    ) -> httpx.AsyncClient:
-        base = timeout if isinstance(timeout, httpx.Timeout) else httpx.Timeout(timeout)
-        return create_mcp_http_client(
-            headers=headers,
-            timeout=httpx.Timeout(
-                connect=connect_timeout_s, read=base.read, write=base.write, pool=base.pool
-            ),
-            auth=auth,
-        )
-
-    return build
 
 
 class PeerClient:

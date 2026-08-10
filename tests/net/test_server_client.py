@@ -128,6 +128,14 @@ def test_the_private_connect_budget_reaches_the_tcp_handshake():
     assert http_client_factory(2.0)().timeout.connect == 2.0
     assert PeerClient("http://peer/mcp", connect_timeout_s=7.0).connect_timeout_s == 7.0
 
+    # The MCP layer passes keywords of its own (`follow_redirects` today, more tomorrow). A
+    # factory that rejects one of them fails EVERY dial with "Client failed to connect" —
+    # which is a handshake failure in every real game, not a test-visible error.
+    assert http_client_factory(1.0)(follow_redirects=True).timeout.connect == 1.0
+    assert http_client_factory(1.0)(headers={"x": "y"}).headers["x"] == "y"
+    defaulted = http_client_factory(1.0)()
+    assert defaulted.timeout.read == 300.0 and defaulted.follow_redirects is True
+
     # The real dialer a real game builds carries the configured budget, not a default.
     repo = Path(__file__).resolve().parents[2]
     raw = json.loads((repo / "config" / "game.json").read_text(encoding="utf-8"))

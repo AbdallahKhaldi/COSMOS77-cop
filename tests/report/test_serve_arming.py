@@ -1,5 +1,6 @@
 """Run-side counted arming: private peer-layer switch, double arming, live-read counts."""
 
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -66,7 +67,7 @@ def test_the_committed_peer_layer_can_actually_arm_a_counted_run(_creds, _dirty,
     instead of refusing half-armed. Nothing is played and nothing is sent."""
     armed = tmp_path / "peer.toml"
     body = (REPO / "config" / "peer.toml").read_text(encoding="utf-8")
-    armed.write_text(body.replace("counted = false", "counted = true"), encoding="utf-8")
+    armed.write_text(re.sub(r"(?m)^counted\s*=.*$", "counted = true", body), encoding="utf-8")
     cfg = load_peer_config(armed)
     assert cfg.league_counted is True
     posture = serve_posture(
