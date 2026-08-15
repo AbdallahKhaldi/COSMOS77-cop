@@ -61,8 +61,9 @@ def test_a_counted_run_refuses_a_dirty_working_tree(_creds):
 
 
 @patch("cosmos77_cop.arming.is_dirty", return_value=False)
+@patch("cosmos77_cop.arming.token_ready", return_value=True)
 @patch("cosmos77_cop.arming.has_credentials", return_value=True)
-def test_the_committed_peer_layer_can_actually_arm_a_counted_run(_creds, _dirty, tmp_path):
+def test_the_committed_peer_layer_can_actually_arm_a_counted_run(_creds, _tok, _dirty, tmp_path):
     """The league-blocking check: this machine's real peer.toml, with `counted = true`, ARMS
     instead of refusing half-armed. Nothing is played and nothing is sent."""
     armed = tmp_path / "peer.toml"
@@ -84,3 +85,25 @@ def test_declared_count_is_live_read_from_the_ledger(tmp_path):
     ledger = Ledger.load(tmp_path / "artifacts" / "league_ledger.json")
     ledger.record(opponent="zulu", game_id="g", game_uid="u", won=True, settled_at="t")
     assert declared_count(str(tmp_path)) == 1
+
+
+@patch("cosmos77_cop.arming.is_dirty", return_value=False)
+@patch("cosmos77_cop.arming.has_credentials", return_value=True)
+@patch("cosmos77_cop.arming.token_ready", return_value=False)
+def test_counted_refuses_when_the_token_cannot_send(_tok, _creds, _dirty, tmp_path):
+    """A counted series owes the league a report; a dead token must refuse UP FRONT —
+    on a headless hub there is no browser to re-consent with after the sixth settle."""
+    with pytest.raises(ArmingError):
+        serve_posture(config_counted=True, cli_counted=True, root=str(tmp_path))
+
+
+def test_token_ready_reads_scope_and_refresh(tmp_path):
+    from cosmos77_cop.report.gmail import token_ready
+
+    assert token_ready(tmp_path) is False  # absent
+    (tmp_path / "token.json").write_text(
+        '{"refresh_token": "x", "scopes": ["https://www.googleapis.com/auth/gmail.send"]}',
+        encoding="utf-8")
+    assert token_ready(tmp_path) is True
+    (tmp_path / "token.json").write_text('{"scopes": []}', encoding="utf-8")
+    assert token_ready(tmp_path) is False  # no refresh, wrong scope

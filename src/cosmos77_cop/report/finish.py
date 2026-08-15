@@ -28,7 +28,9 @@ def finish_series(
     pair = sorted([driver.gid_a, driver.gid_b])
     locked = dict(raw_cfg)
     locked["agreed_between"] = pair
-    for window in range(1, len(driver.reports) + 1):
+    # The ACTUAL windows this side played (split topology: e.g. 2,4,6), never a
+    # dense 1..N — misnumbered config artifacts break the opponent's bundle audit.
+    for window in sorted({int(r.sub_game_number) for r in driver.reports}):
         writer.write_config(
             window,
             {**locked, "game_id": driver.gid, "game_uid": writer.uid, "sub_game_number": window},

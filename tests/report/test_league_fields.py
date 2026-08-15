@@ -66,12 +66,14 @@ def test_the_opponents_token_count_is_null_not_zero():
         report, cfg=CFG, police_gid="cosmos77", thief_gid="rival", gid="a-vs-b",
         my_gid="cosmos77", opp_gid="rival", my_commit="a" * 40,
     )
-    assert built["tokens"] == {"cosmos77": 1234, "rival": None}
+    # numeric BOTH sides: the kit's check_artifacts.py (the mandatory bundle gate)
+    # refuses non-numeric tokens maps; 0 = unmeasured, the filed-artifact convention
+    assert built["tokens"] == {"cosmos77": 1234, "rival": 0}
     final = final_result_block(
         [built], cfg=CFG, gid_a="cosmos77", gid_b="rival", counted=False, my_gid="cosmos77",
     )
-    assert final["tokens_total_series"] == {"cosmos77": 1234, "rival": None}
-    assert json.loads(canonical_bytes(final))["tokens_total_series"]["rival"] is None
+    assert final["tokens_total_series"] == {"cosmos77": 1234, "rival": 0}
+    assert json.loads(canonical_bytes(final))["tokens_total_series"]["rival"] == 0
 
 
 def test_first_meeting_reads_the_committed_ledger(tmp_path):
@@ -83,7 +85,8 @@ def test_first_meeting_reads_the_committed_ledger(tmp_path):
 
 @patch("cosmos77_cop.arming.is_dirty", return_value=False)
 @patch("cosmos77_cop.arming.has_credentials", return_value=True)
-def test_counted_arming_refuses_a_repeat_opponent(_creds, _dirty, tmp_path):
+def test_counted_arming_refuses_a_repeat_opponent(_creds, _dirty, tmp_path, monkeypatch):
+    monkeypatch.setattr("cosmos77_cop.arming.token_ready", lambda root=".": True)
     ledger = Ledger.load(tmp_path / "artifacts" / "league_ledger.json")
     ledger.record(opponent="rival", game_id="g", game_uid="u", won=True, settled_at="t")
     with pytest.raises(ArmingError, match="rule 52"):

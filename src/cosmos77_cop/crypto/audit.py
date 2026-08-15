@@ -45,7 +45,8 @@ def _integrity(records: list[dict[str, Any]]) -> tuple[list[int], list[str]]:
 def _binding(
     records: list[dict[str, Any]], received: dict[int, str]
 ) -> tuple[list[int], list[str]]:
-    revealed = {int(r["payload"]["step"]): str(r["commit"]) for r in records if "payload" in r}
+    revealed = {int(r["payload"].get("step", -1)): str(r.get("commit", ""))
+                for r in records if isinstance(r.get("payload"), dict)}
     failed, notes = [], []
     for step, wire_commit in received.items():
         if step not in revealed:
@@ -90,6 +91,28 @@ def _physics(
     return failed, notes
 
 
+def _well_formed(records: object) -> list[dict[str, Any]]:
+    """The reveal elements a hostile peer cannot crash us with.
+
+    A disclosure is OPPONENT input: a non-list, a non-dict element, or a record whose
+    payload is not a dict (or lacks an int-able step) must land in the TAMPERED
+    verdict, never in an AttributeError that takes our audit down — a crash here
+    would zero US for failing to file, which is exactly what a hostile reveal wants.
+    """
+    if not isinstance(records, list):
+        return []
+    sound = []
+    for record in records:
+        if not isinstance(record, dict) or not isinstance(record.get("payload"), dict):
+            continue
+        try:
+            int(record["payload"].get("step", -1))
+        except (TypeError, ValueError):
+            continue
+        sound.append(record)
+    return sound
+
+
 def audit_records(
     records: list[dict[str, Any]],
     received_commits: dict[int, str],
@@ -99,11 +122,17 @@ def audit_records(
     max_steps: int,
 ) -> AuditReport:
     """Run layers 1-3 over a revealed log; layer 4 (ending corroboration) is ``corroborate.py``."""
+    if isinstance(records, list):
+        malformed = len(records) - len(records := _well_formed(records))
+    else:
+        records, malformed = [], 1  # the whole disclosure is malformed
     tamper_steps, notes = _integrity(records)
     bind_steps, bind_notes = _binding(records, received_commits)
     tamper_steps += bind_steps
     notes += bind_notes
-    if tamper_steps:
+    if malformed:
+        notes.insert(0, f"{malformed} malformed reveal record(s) refused (counted as tampered)")
+    if tamper_steps or malformed:
         return AuditReport(VERDICT_TAMPERED, sorted(set(tamper_steps)), notes)
     physics_steps, physics_notes = _physics(
         records, grid_size=grid_size, barriers_max=barriers_max, max_steps=max_steps

@@ -182,8 +182,9 @@ def test_a_malformed_wire_turn_is_refused_not_crashed():
     gw = _FakeGateway()
     assert runtime.route_turn(gw, {"hint": "no step or commit here"}) == []
     assert gw.receiver.malformed == 1
-    good = {"step": 1, "commit": "c" * 64}
-    assert runtime.route_turn(gw, good), "a well-formed turn still applies after the refusal"
+    good = {"step": 1, "sender": "police", "hint": "", "smell_grid": {"3,3": 0.9},
+            "commit": "c" * 64, "timestamp": "2026-08-15T00:00:00+00:00"}
+    assert runtime.route_turn(gw, good), "a conformant turn still applies after the refusal"
 
 
 def test_handshake_accepts_a_greeting_carried_in_the_reply_body():

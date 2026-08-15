@@ -27,6 +27,23 @@ def has_credentials(root: str | Path = ".") -> bool:
     return (Path(root) / CREDENTIALS_FILE).exists()
 
 
+def token_ready(root: str | Path = ".") -> bool:
+    """A refresh-capable send-only token exists (no network; the arming gate's check).
+
+    A counted series owes the league a report; discovering a dead mail rail after the
+    sixth settle is the worst possible time (kit pairing playbook, stage 0).  On a
+    headless hub there is no browser to re-consent with, so an armed run must refuse
+    up front unless the stored token can actually mint a send.
+    """
+    import json
+
+    try:
+        doc = json.loads((Path(root) / TOKEN_FILE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return bool(doc.get("refresh_token")) and SCOPES[0] in (doc.get("scopes") or [])
+
+
 def load_credentials(root: str | Path = ".") -> object:
     """Load or refresh the send-only OAuth credentials (opens a browser on first run)."""
     from google.auth.exceptions import RefreshError

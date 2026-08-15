@@ -84,15 +84,27 @@ def main() -> int:
         )
         check("ALL VECTORS PASS" in out.stdout, "community kit vectors pass")
 
+    tag = subprocess.run(["git", "rev-list", "-n1", "v1.0-submission"],
+                         cwd=REPO, capture_output=True, text=True, check=False)
+    head = subprocess.run(["git", "rev-parse", "HEAD"],
+                          cwd=REPO, capture_output=True, text=True, check=False)
+    check(
+        tag.returncode != 0 or tag.stdout.strip() == head.stdout.strip(),
+        "v1.0-submission tag absent or AT HEAD (a stale tag would submit old code — "
+        "the six-key consensus bug lived exactly there)",
+    )
+
     print(f"\n  Pre-submission checklist — {PKG.name}\n")
     for ok, label in results:
         print(f"  [{'x' if ok else ' '}] {label}")
     print("\n  HUMAN-ONLY items (not decidable here):")
     for item in (
         "both repos public or shared with rmisegal@gmail.com, invite ACCEPTED",
-        "annotated tag v1.0-submission pushed in both repos",
+        "annotated tag v1.0-submission CREATED FRESH AT THE FINAL COMMIT and pushed in "
+        "both repos (a mechanical check below refuses a stale one)",
         "at least 2 counted games vs different teams, settled and reported by BOTH sides",
-        "Render services answer 406; a cross-machine F1 handshake succeeded",
+        "Railway arena answers 200 /health and 406 on /cop/mcp + /thief/mcp + /mcp; "
+        "a cross-machine F1 handshake succeeded",
         "each member submitted the filled PDF separately in Moodle",
     ):
         print(f"  [ ] {item}")

@@ -12,7 +12,7 @@ structurally unreachable from any single mistake, and no web surface can ever re
 from __future__ import annotations
 
 from .crypto.step0 import is_dirty
-from .report.gmail import has_credentials
+from .report.gmail import has_credentials, token_ready
 from .report.ledger import Ledger, ledger_file
 from .report.recipients import ArmingError, Posture, assert_deliverable
 
@@ -24,7 +24,9 @@ def serve_posture(
 ) -> Posture:
     """Resolve the run posture, refusing half-armed, dirty, undeliverable or repeat runs."""
     posture = Posture(config_counted=config_counted, cli_counted=cli_counted)
-    assert_deliverable(posture, has_credentials=has_credentials(root), settled=True)
+    deliverable = has_credentials(root) and (not (config_counted and cli_counted)
+                                             or token_ready(root))
+    assert_deliverable(posture, has_credentials=deliverable, settled=True)
     if posture.counted and is_dirty(root):
         raise ArmingError(
             "rule 53: the working tree is dirty, so the commit this run would seal into every "

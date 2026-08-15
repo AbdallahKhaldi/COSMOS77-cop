@@ -322,7 +322,7 @@ hardcoded tunables · type hints and docstrings on public symbols · determinist
 | 5–7 | MCP peer + receiver contract · scent/hints · six-window driver + artifacts | done |
 | 8 | Sparring exam vs the community kit — 90–30 ×3, audits clean both sides | done |
 | 9–10 | Local-truth GUI + replay verification · gated Gmail + Gatekeeper | done |
-| 11 | Deploy artifacts (Render blueprint, warm-up, runbook) | code done; deploy pending |
+| 11 | Deployment — Railway arena hosts both agents 24/7 (ADR-006); Render blueprint kept as warm backup | LIVE: https://cosmos77-arena-production.up.railway.app |
 | 11B | Challenge console — local ops panel: readiness, one-click friendlies, pairing-packet generator | done |
 | 12 | Academic report (this file) + submission pack | done |
 | 13 | League: friendlies → counted series vs real opponents | pending |

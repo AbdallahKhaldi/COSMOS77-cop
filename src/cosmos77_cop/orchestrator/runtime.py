@@ -16,6 +16,7 @@ import uvicorn
 from ..crypto.nonce import new_nonce
 from ..net.client import PeerCallError
 from ..net.server import KIND_AUDIT, KIND_NEGOTIATE, KIND_TURN
+from ..net.wire import refuse_turn
 from .dialect import greeting_from_reply
 from .gateway import Gateway
 
@@ -32,13 +33,20 @@ def start_server(mcp: object, port: int, host: str = "127.0.0.1") -> uvicorn.Ser
     )
     server = uvicorn.Server(config)
     threading.Thread(target=server.run, daemon=True).start()
+    deadline = time.monotonic() + 15.0
     while not server.started:
+        if time.monotonic() > deadline:  # port held / bind refused: fail loudly, never hang
+            raise RuntimeError(f"MCP server failed to bind {host}:{port} within 15s")
         time.sleep(0.02)
     return server
 
 
 def route_turn(gateway: Gateway, message: dict[str, Any]) -> list[dict[str, Any]]:
-    """Route one wire turn; a message missing step/commit is refused, never crashed on."""
+    """Route one wire turn; nonconformant ones are refused with a reason (net/wire.py)."""
+    if (reason := refuse_turn(message)) is not None:
+        gateway.receiver.malformed += 1
+        print(f"turn refused: {reason}")
+        return []
     try:
         applied = gateway.receiver.ingest(message)
     except (KeyError, TypeError, ValueError):
@@ -63,7 +71,8 @@ def handshake(gateway: Gateway) -> bool:
         if now - last_send >= (2.0 if sent else 0.5):
             try:
                 reply = gateway.client.call(
-                    "negotiate", {"message": gateway.greeting(new_nonce())}, deadline_s=5.0
+                    "negotiate", {"message": gateway.greeting(new_nonce())},
+                    deadline_s=max(5.0, gateway.peer_cfg.connect_timeout_s),
                 )
                 sent = True
                 if not verified:
@@ -109,38 +118,8 @@ def await_applied(gateway: Gateway, timeout_s: float) -> list[dict[str, Any]]:
     return []
 
 
-def send_turn(gateway: Gateway, wire: dict[str, Any]) -> bool:
-    """Deliver one turn message within the turn budget; False on a controlled failure."""
-    try:
-        gateway.client.call(
-            "receive_turn", {"message": wire}, deadline_s=gateway.peer_cfg.turn_timeout_s
-        )
-    except PeerCallError:
-        return False
-    return True
+# Delivery moved to .delivery; re-exported so call sites and test patches keep one seam.
+from .delivery import exchange_audits, send_turn  # noqa: E402
 
-
-def exchange_audits(
-    gateway: Gateway, records: list[dict[str, Any]], result_claim: str, timeout_s: float
-) -> dict[str, Any] | None:
-    """Submit our reveal, then wait for theirs (both reveal, THEN both verify)."""
-    try:
-        gateway.client.call(
-            "submit_audit",
-            {"payload": {"sender": gateway.role, "records": records, "result_claim": result_claim}},
-            deadline_s=gateway.peer_cfg.turn_timeout_s,
-        )
-    except PeerCallError:
-        return None
-    if gateway.pending_audits:
-        return gateway.pending_audits.pop(0)
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        item = gateway.inbox.pull(timeout_s=gateway.peer_cfg.poll_s)
-        if item and item[0] == KIND_AUDIT:
-            return item[1]
-        if item and item[0] == KIND_TURN:
-            gateway.pending_turns.extend(route_turn(gateway, item[1]))
-        elif item and item[0] == KIND_NEGOTIATE:
-            gateway.pending_greetings.append(item[1])
-    return None
+__all__ = ["await_applied", "exchange_audits", "handshake", "route_turn",
+           "send_turn", "start_server"]

@@ -48,9 +48,12 @@ def row_from_report(
         "tie": False,
         "steps": report.steps,
         "github_commit": commits,
-        # OUR count is measured; theirs is UNCLAIMED, and kit SPEC §6.2 is explicit that null
-        # is not 0 — a hardcoded 0 asserts the opponent spent no tokens, which we cannot know.
-        "tokens": {my_gid: report.tokens, opp_gid: None},
+        # Numeric for BOTH groups: SPEC §6.2 scopes null-legality to
+        # games_played_including_this ONLY, and the kit's check_artifacts.py (the
+        # mandatory gate on counted bundles) refuses a non-numeric tokens map.  The
+        # reference and every filed artifact carry 0 for the unmeasured side — 0 here
+        # means "unmeasured by us", the convention every played implementation signs.
+        "tokens": {my_gid: report.tokens, opp_gid: 0},
         "score": row_score(result, police_gid, thief_gid, cfg.scoring),
         "log_files": {my_gid: log_name, opp_gid: log_name},
         "audit": {
@@ -60,10 +63,9 @@ def row_from_report(
     }
 
 
-def _series_tokens(rows: list[dict[str, Any]], gid: str) -> int | None:
-    """Sum only the MEASURED per-row counts; a group we never measured stays null (§6.2)."""
-    measured = [int(v) for r in rows if (v := (r.get("tokens") or {}).get(gid)) is not None]
-    return sum(measured) if measured else None
+def _series_tokens(rows: list[dict[str, Any]], gid: str) -> int:
+    """Numeric series total per group (0 = unmeasured), as the kit checker requires."""
+    return sum(int((r.get("tokens") or {}).get(gid) or 0) for r in rows)
 
 
 def final_result_block(

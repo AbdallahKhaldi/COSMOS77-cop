@@ -235,3 +235,23 @@ contradict each other and the mandatory screenshot would be unobtainable. Under 
 freedom clause we take the reading that keeps both rules satisfiable, and we state it here
 rather than leaving it implicit. The Phase-11B sentence is therefore amended in one word: the
 console rail applies to **live** rendering; settled-game replay is exempt, and only there.
+
+## ADR-010 — Consensus signature signs the reference five-key row (2026-08-15)
+
+**Decision.** The settlement preimage (`mutual_agreement.sha256`) trims each sub-game row to
+`sub_game_number, roles, result, winner_group, score`. `tie` stays in the document row and is
+NOT signed.
+
+**Context.** The community kit itself documented a SIX-key row (with `tie`) from 2026-08-04 to
+08-13 — the exact window this project was built in — and this repo shipped it. The kit's
+correction (its commit `ad65576`, found by anrbj666 against the reference's own artifact) showed
+every hash ever settled live reproduces only under five keys: the reference's emit.py writes
+`tie` into the document row and deliberately leaves it out of the hash preimage.
+
+**Consequences.** A six-key signer fails settlement against every played implementation —
+invisible until a live report diff, on a counted series that is rule 35, zero for BOTH teams.
+Fixed in `protocol/consensus.py` (both repos, byte-identical), pinned by
+`tests/protocol/test_consensus_scope.py`, and the stale local `v1.0-submission` tags that
+pointed at six-key-era code were deleted; preflight now refuses any tag not at HEAD. Nothing is
+lost by the trim: `tie` is derivable as `winner_group == null` and the tie COUNT sits in the
+signed aggregate.
