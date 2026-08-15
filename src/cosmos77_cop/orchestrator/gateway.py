@@ -15,7 +15,7 @@ from ..orchestrator.peerconf import PeerConfig
 from ..protocol.ids import game_uid
 from ..protocol.locks import OUR_LOCKS, REGISTERED
 from ..protocol.terms import terms_from_config
-from . import identity
+from . import dialect, identity
 from .deadline import DeadlineClock
 from .hintconf import hint_setup
 
@@ -65,7 +65,10 @@ class Gateway:
         if counted_games_played is not None:
             self.identity["counted_games_played"] = int(counted_games_played)
         self.inbox = inbox or PeerInbox(peer_cfg.queue_depth)
-        self.mcp = build_server(self.inbox, f"cosmos77-{role}")
+        self.mcp = build_server(
+            self.inbox, f"cosmos77-{role}",
+            greeting_provider=lambda: dialect.gateway_greeting(self),
+        )
         self.client = client or PeerClient(
             peer_cfg.opponent_url, connect_timeout_s=peer_cfg.connect_timeout_s
         )

@@ -9,6 +9,8 @@ def serve(argv: list[str]) -> int:
     """Parse ``serve`` arguments and play one series in this repo's fixed role."""
     parser = argparse.ArgumentParser(prog="cosmos-cop serve")
     parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--host", default="0.0.0.0",
+                        help="bind address (loopback-only cannot be dialed by an opponent)")
     parser.add_argument("--peer-url", required=True)
     parser.add_argument("--gid-a", required=True)
     parser.add_argument("--gid-b", required=True)
@@ -38,11 +40,8 @@ def serve(argv: list[str]) -> int:
     from cosmos77_cop.commands import serve_cmd
 
     return serve_cmd(
-        port=args.port,
-        peer_url=args.peer_url,
-        gid_a=args.gid_a,
-        gid_b=args.gid_b,
-        windows=args.windows,
+        port=args.port, host=args.host, peer_url=args.peer_url,
+        gid_a=args.gid_a, gid_b=args.gid_b, windows=args.windows,
         out=args.out,
         config_path=args.config,
         alternate_labels=args.alternate_labels,
@@ -88,6 +87,8 @@ def smoke_peer(argv: list[str]) -> int:
     """Parse ``smoke-peer`` arguments and run the Phase-5 two-process gate."""
     parser = argparse.ArgumentParser(prog="cosmos-cop smoke-peer")
     parser.add_argument("--port", type=int, required=True)
+    parser.add_argument("--host", default="0.0.0.0",
+                        help="bind address (loopback-only cannot be dialed by an opponent)")
     parser.add_argument("--peer-url", required=True)
     parser.add_argument("--role", choices=["police", "thief"], required=True)
     parser.add_argument("--config", default="config/game.json")
@@ -95,7 +96,8 @@ def smoke_peer(argv: list[str]) -> int:
     from cosmos77_cop.orchestrator.smoke import run_smoke_peer
 
     return run_smoke_peer(
-        role=args.role, port=args.port, peer_url=args.peer_url, game_config_path=args.config
+        role=args.role, port=args.port, host=args.host, peer_url=args.peer_url,
+        game_config_path=args.config,
     )
 
 

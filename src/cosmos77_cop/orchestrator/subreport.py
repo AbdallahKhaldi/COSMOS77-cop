@@ -69,7 +69,9 @@ def surface_wire_evidence(gateway: Gateway, state: TurnState, report: SubGameRep
     """
     report.equivocations = [list(t) for t in gateway.receiver.equivocations]
     floods = [f"past-window flood at step {s}" for s in gateway.receiver.violations]
-    report.violations = [*state.wire_violations, *floods]
+    malformed = ([f"{gateway.receiver.malformed} malformed wire turn(s) refused"]
+                 if gateway.receiver.malformed else [])
+    report.violations = [*state.wire_violations, *floods, *malformed]
 
 
 def audit_phase(gateway: Gateway, state: TurnState, bridge: object, report: SubGameReport) -> None:

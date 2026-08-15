@@ -39,6 +39,7 @@ def selfplay_cmd(
         [
             "uv", "run", tool, "serve",
             "--port", str(their_port),
+            "--host", "127.0.0.1",
             "--peer-url", f"http://127.0.0.1:{my_port}/mcp",
             "--gid-a", gid_a, "--gid-b", gid_b,
             "--windows", str(windows),
@@ -55,6 +56,7 @@ def selfplay_cmd(
         rc = serve_cmd(
             vary_seed=vary_seed,
             port=my_port,
+            host="127.0.0.1",
             peer_url=f"http://127.0.0.1:{their_port}/mcp",
             gid_a=gid_a,
             gid_b=gid_b,

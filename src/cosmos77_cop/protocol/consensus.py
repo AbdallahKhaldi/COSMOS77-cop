@@ -45,9 +45,16 @@ def consensus_scope(
 ) -> dict[str, Any]:
     """The ``mutual_agreement.sha256`` preimage: everything both teams must agree on, only that.
 
-    Rows are trimmed to sub_game_number, roles, result, winner_group, tie, score — timestamps
-    and token counts are per-side and stay out.
+    Rows are trimmed to the reference's FIVE-key form — sub_game_number, roles, result,
+    winner_group, score.  ``tie`` stays in the document row but is NOT signed: the reference's
+    emit.py deliberately leaves it out of the hash preimage, and every hash ever settled live
+    reproduces only under the five-key row (kit SPEC §6 correction of 2026-08-13; the kit itself
+    documented a six-key row from 08-04 to 08-13, which this module was first built against — a
+    signer that keeps ``tie`` fails settlement against every played implementation, and on a
+    counted series that is rule 35, zero for BOTH teams).  Nothing is lost: tie is derivable as
+    ``winner_group == null`` and the tie COUNT sits in the signed aggregate.  Timestamps and
+    token counts are per-side and stay out.
     """
-    keep = ("sub_game_number", "roles", "result", "winner_group", "tie", "score")
+    keep = ("sub_game_number", "roles", "result", "winner_group", "score")
     trimmed = [{k: row[k] for k in keep if k in row} for row in sub_games]
     return {"game_id": gid, "aggregate": aggregate, "sub_games": trimmed}

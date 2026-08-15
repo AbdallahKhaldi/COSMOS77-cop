@@ -37,6 +37,7 @@ def serve_cmd(
     *,
     port: int,
     peer_url: str,
+    host: str = "0.0.0.0",
     gid_a: str,
     gid_b: str,
     windows: int,
@@ -114,7 +115,7 @@ def serve_cmd(
     todo = (
         [int(w) for w in windows_spec.split(",")] if windows_spec else list(range(1, windows + 1))
     )
-    server = start_server(driver.mcp, port)
+    server = start_server(driver.mcp, port, host=host)
     summary = {"settled": False}
     try:
         for window in todo:

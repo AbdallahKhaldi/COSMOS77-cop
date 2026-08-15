@@ -65,6 +65,8 @@ class Receiver:
             return VIOLATION
         return DISCARD
 
+    malformed: int = 0  # wire turns refused for missing/untyped step or commit
+
     def ingest(self, message: dict[str, Any]) -> list[dict[str, Any]]:
         """Feed one arrival; return the messages that became applicable, in step order."""
         step, commit = int(message["step"]), str(message["commit"])

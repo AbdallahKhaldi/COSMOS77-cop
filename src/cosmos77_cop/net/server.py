@@ -8,6 +8,7 @@ runs on a worker thread. A refusal can never be a return value; it travels as a 
 from __future__ import annotations
 
 import queue
+from collections.abc import Callable
 from typing import Any
 
 from fastmcp import FastMCP
@@ -46,14 +47,28 @@ class PeerInbox:
             return None
 
 
-def build_server(inbox: PeerInbox, name: str) -> FastMCP:
-    """The FastMCP app exposing negotiate / receive_turn / receive_control / submit_audit."""
+def build_server(
+    inbox: PeerInbox, name: str, greeting_provider: Callable[[], dict | None] | None = None
+) -> FastMCP:
+    """The FastMCP app exposing negotiate / receive_turn / receive_control / submit_audit.
+
+    ``negotiate`` answers with OUR greeting under ``message`` when a provider is wired.
+    The kit's wire surface leaves the direction open ("either side may open"), and its
+    WARNINGS 2b documents two live stalls where a push peer and a request/response peer
+    were each conformant and mutually mute.  Carrying the greeting in the reply makes a
+    request/response opponent read the agreement out of its own call; push opponents
+    ignore the extra key (the extension seam).  Still validate -> enqueue -> return
+    immediately: the provider is pure construction, never I/O.
+    """
     mcp: FastMCP = FastMCP(name)
 
     @mcp.tool
     def negotiate(message: dict) -> dict:
         """Receive the opponent's greeting (terms, signature, pairing, locks, uid)."""
         inbox.push(KIND_NEGOTIATE, message)
+        greeting = greeting_provider() if greeting_provider is not None else None
+        if greeting is not None:
+            return {**OK, "message": greeting}
         return OK
 
     @mcp.tool

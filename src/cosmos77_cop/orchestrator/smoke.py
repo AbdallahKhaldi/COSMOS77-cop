@@ -94,7 +94,8 @@ def _await_turn(gateway: Gateway) -> bool:
     return 1 in gateway.received_commits
 
 
-def run_smoke_peer(*, role: str, port: int, peer_url: str, game_config_path: str) -> int:
+def run_smoke_peer(*, role: str, port: int,
+    host: str = "0.0.0.0", peer_url: str, game_config_path: str) -> int:
     """Serve, dial, handshake, one committed turn each way; 0 on success."""
     gateway = Gateway(
         game_cfg=load_game_config(game_config_path),
@@ -103,7 +104,7 @@ def run_smoke_peer(*, role: str, port: int, peer_url: str, game_config_path: str
         group_id="cosmos77",
         group_name="cosmos77",
     )
-    server = runtime.start_server(gateway.mcp, port)
+    server = runtime.start_server(gateway.mcp, port, host=host)
     try:
         if not _handshake(gateway):
             return 4

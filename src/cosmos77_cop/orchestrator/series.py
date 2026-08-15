@@ -16,6 +16,7 @@ from ..net.client import PeerClient
 from ..net.server import KIND_NEGOTIATE, PeerInbox, build_server
 from ..protocol.ids import artifact_filenames, game_id
 from .brainbridge import ROLE, BrainBridge
+from .dialect import gateway_greeting
 from .gateway import Gateway
 from .hintconf import hint_setup
 from .peerconf import PeerConfig
@@ -74,7 +75,11 @@ class SeriesDriver:
         self.first_meeting = first_meeting
         self.hardware = hardware or {}
         self.inbox = PeerInbox(peer_cfg.queue_depth)
-        self.mcp = build_server(self.inbox, f"cosmos77-series-{ROLE}")
+        self.current_gateway: Gateway | None = None
+        self.mcp = build_server(
+            self.inbox, f"cosmos77-series-{ROLE}",
+            greeting_provider=lambda: gateway_greeting(self.current_gateway),
+        )
         self.client = PeerClient(
             peer_cfg.opponent_url, connect_timeout_s=peer_cfg.connect_timeout_s
         )
@@ -102,15 +107,9 @@ class SeriesDriver:
         my_gid = police_gid if ROLE == "police" else thief_gid
         opp_gid = thief_gid if ROLE == "police" else police_gid
         return Gateway(
-            game_cfg=self.cfg,
-            peer_cfg=self.peer_cfg,
-            role=ROLE,
-            group_id=my_gid,
-            group_name=my_gid,
-            sub_game_number=window,
-            opponent_group_id=opp_gid,
-            client=self.client,
-            inbox=self.inbox,
+            game_cfg=self.cfg, peer_cfg=self.peer_cfg, role=ROLE,
+            group_id=my_gid, group_name=my_gid, sub_game_number=window,
+            opponent_group_id=opp_gid, client=self.client, inbox=self.inbox,
             scent_model=self.scent_model,
             counted_games_played=self.num_games_declared,
         )
@@ -124,15 +123,13 @@ class SeriesDriver:
                 time.sleep(0.05)
         _drain(self.inbox)
         gateway = self.gateway_for(window)
+        self.current_gateway = gateway
         state = fresh_state(self.cfg, ROLE)
         kit = SideKit.fresh(
-            self.cfg,
-            ROLE,
-            seed=1000 + window,
+            self.cfg, ROLE, seed=1000 + window,
             every_n=self.peer_cfg.hint_every_n_steps,
             lie_rate=self.peer_cfg.hint_lie_rate,
-            scent_model=self.scent_model,
-            setup=self.hints,
+            scent_model=self.scent_model, setup=self.hints,
             tokens_spent=self.tokens_spent,
         )
         bridge = BrainBridge(state, self.peer_cfg.strategy_params())

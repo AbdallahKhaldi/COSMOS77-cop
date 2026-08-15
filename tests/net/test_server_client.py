@@ -145,3 +145,73 @@ def test_the_private_connect_budget_reaches_the_tcp_handshake():
         group_name="cosmos77", opponent_group_id="rival",
     )
     assert gateway.client.connect_timeout_s == 4.0
+
+
+def test_negotiate_reply_carries_our_greeting_for_request_response_peers():
+    """Kit WARNINGS 2b: a request/response opponent reads the agreement out of its own
+    call's reply — a bare {"ok": true} leaves it waiting forever with healthy logs."""
+    from cosmos77_cop.net.server import PeerInbox, build_server
+
+    ours = {"terms": {"grid_size": 7}, "signature": "aa", "group_id": "cosmos77"}
+    mcp = build_server(PeerInbox(), "t", greeting_provider=lambda: dict(ours))
+    tool = mcp._tool_manager._tools["negotiate"]
+    reply = tool.fn(message={"terms": {}, "group_id": "rival"})
+    assert reply["ok"] is True
+    assert reply["message"] == ours, "the reply must carry OUR greeting for them to read"
+
+
+def test_negotiate_reply_stays_bare_ok_without_a_provider():
+    """Standing servers (no config bound yet) keep the legacy shape — push peers ignore it."""
+    from cosmos77_cop.net.server import PeerInbox, build_server
+
+    mcp = build_server(PeerInbox(), "t")
+    reply = mcp._tool_manager._tools["negotiate"].fn(message={})
+    assert reply == {"ok": True}
+
+
+def test_a_malformed_wire_turn_is_refused_not_crashed():
+    """One garbage POST (no step/commit) from a buggy peer must never kill the series."""
+    from cosmos77_cop.net.receiver import Receiver
+    from cosmos77_cop.orchestrator import runtime
+
+    class _FakeGateway:
+        def __init__(self):
+            self.receiver = Receiver(4)
+            self.received_commits: dict[int, str] = {}
+
+    gw = _FakeGateway()
+    assert runtime.route_turn(gw, {"hint": "no step or commit here"}) == []
+    assert gw.receiver.malformed == 1
+    good = {"step": 1, "commit": "c" * 64}
+    assert runtime.route_turn(gw, good), "a well-formed turn still applies after the refusal"
+
+
+def test_handshake_accepts_a_greeting_carried_in_the_reply_body():
+    """The outbound half of WARNINGS 2b: we must read the response, not only our queue."""
+    from types import SimpleNamespace
+
+    from cosmos77_cop.orchestrator import dialect
+
+    theirs = {"terms": {"grid_size": 7}, "signature": "bb", "group_id": "rival"}
+
+    class _Verdict:
+        ok = True
+        bystander = False
+
+    captured = {}
+
+    class _FakeGateway:
+        peer_greeting = None
+
+        @staticmethod
+        def verify(candidate):
+            captured["candidate"] = candidate
+            return _Verdict()
+
+    gw = _FakeGateway()
+    reply = SimpleNamespace(data={"ok": True, "message": dict(theirs)})
+    assert dialect.greeting_from_reply(gw, reply) is True
+    assert gw.peer_greeting == theirs and captured["candidate"] == theirs
+    # our own peers answer a bare ok — ignored, never refused
+    assert dialect.greeting_from_reply(_FakeGateway(), SimpleNamespace(data={"ok": True})) is False
+    assert dialect.greeting_from_reply(_FakeGateway(), SimpleNamespace()) is False

@@ -16,13 +16,19 @@ import uvicorn
 from ..crypto.nonce import new_nonce
 from ..net.client import PeerCallError
 from ..net.server import KIND_AUDIT, KIND_NEGOTIATE, KIND_TURN
+from .dialect import greeting_from_reply
 from .gateway import Gateway
 
 
-def start_server(mcp: object, port: int) -> uvicorn.Server:
-    """Serve the MCP app on localhost in a daemon thread; block until ready."""
+def start_server(mcp: object, port: int, host: str = "127.0.0.1") -> uvicorn.Server:
+    """Serve the MCP app in a daemon thread; block until ready.
+
+    Loopback-bound, ``serve --port 8801`` answers ourselves and refuses the LAN — the
+    opponent sees connection refused while every local probe says we are healthy.  So
+    ``serve`` binds 0.0.0.0 and selfplay stays on loopback.
+    """
     config = uvicorn.Config(
-        mcp.http_app(path="/mcp"), host="127.0.0.1", port=port, log_level="error"
+        mcp.http_app(path="/mcp"), host=host, port=port, log_level="error"
     )
     server = uvicorn.Server(config)
     threading.Thread(target=server.run, daemon=True).start()
@@ -32,8 +38,12 @@ def start_server(mcp: object, port: int) -> uvicorn.Server:
 
 
 def route_turn(gateway: Gateway, message: dict[str, Any]) -> list[dict[str, Any]]:
-    """Feed one wire turn through the receiver; track applied commits; return applied batch."""
-    applied = gateway.receiver.ingest(message)
+    """Route one wire turn; a message missing step/commit is refused, never crashed on."""
+    try:
+        applied = gateway.receiver.ingest(message)
+    except (KeyError, TypeError, ValueError):
+        gateway.receiver.malformed += 1
+        return []
     for msg in applied:
         gateway.received_commits[int(msg["step"])] = str(msg["commit"])
     return applied
@@ -52,10 +62,12 @@ def handshake(gateway: Gateway) -> bool:
         now = time.monotonic()
         if now - last_send >= (2.0 if sent else 0.5):
             try:
-                gateway.client.call(
+                reply = gateway.client.call(
                     "negotiate", {"message": gateway.greeting(new_nonce())}, deadline_s=5.0
                 )
                 sent = True
+                if not verified:
+                    verified = greeting_from_reply(gateway, reply)
             except PeerCallError:
                 pass
             last_send = now
