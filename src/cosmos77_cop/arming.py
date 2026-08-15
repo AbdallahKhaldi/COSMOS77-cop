@@ -11,11 +11,9 @@ structurally unreachable from any single mistake, and no web surface can ever re
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from .crypto.step0 import is_dirty
 from .report.gmail import has_credentials
-from .report.ledger import LEDGER_FILE, Ledger
+from .report.ledger import Ledger, ledger_file
 from .report.recipients import ArmingError, Posture, assert_deliverable
 
 __all__ = ["ArmingError", "declared_count", "first_meeting", "serve_posture"]
@@ -32,7 +30,7 @@ def serve_posture(
             "rule 53: the working tree is dirty, so the commit this run would seal into every "
             "step-0 record is NOT the code playing — commit or stash before arming"
         )
-    if posture.counted and opponent and Ledger.load(Path(root) / LEDGER_FILE).has_played(opponent):
+    if posture.counted and opponent and Ledger.load(ledger_file(root)).has_played(opponent):
         raise ArmingError(
             f"rule 52: a counted series against {opponent} is already recorded; only one counts"
         )
@@ -41,9 +39,9 @@ def serve_posture(
 
 def declared_count(root: str = ".") -> int:
     """The rule-37 truthful ``counted_games_played``, live-read from the committed ledger."""
-    return Ledger.load(Path(root) / LEDGER_FILE).counted_games_played
+    return Ledger.load(ledger_file(root)).counted_games_played
 
 
 def first_meeting(opponent: str, root: str = ".") -> bool:
     """The rule-52 ledger's truthful answer: would a counted series be this pairing's first?"""
-    return Ledger.load(Path(root) / LEDGER_FILE).first_meeting(opponent)
+    return Ledger.load(ledger_file(root)).first_meeting(opponent)

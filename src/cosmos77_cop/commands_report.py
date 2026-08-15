@@ -21,11 +21,11 @@ def _advance_ledger(body: dict[str, Any], root: str) -> int:
     """Advance the rule-52 ledger by the counted send that just succeeded."""
     from .net.messages import now_iso
     from .orchestrator.identity import GROUP_ID
-    from .report.ledger import LEDGER_FILE, Ledger, LedgerError
+    from .report.ledger import Ledger, LedgerError, ledger_file
 
     rows = body.get("sub_games") or []
     opponent = next((str(g) for g in body.get("groups") or [] if g != GROUP_ID), "unknown")
-    ledger = Ledger.load(Path(root) / LEDGER_FILE)
+    ledger = Ledger.load(ledger_file(root))
     try:
         ledger.record(
             opponent=opponent,
@@ -35,7 +35,8 @@ def _advance_ledger(body: dict[str, Any], root: str) -> int:
             settled_at=str(rows[-1].get("ended_at") or now_iso()) if rows else now_iso(),
         )
     except LedgerError as exc:
-        print(f"report: LEDGER ERROR — {exc}; reconcile {LEDGER_FILE} by hand before anything else")
+        print(f"report: LEDGER ERROR — {exc}; "
+              f"reconcile {ledger_file(root)} by hand before anything else")
         return 1
     print(f"report: rule-52 ledger advanced to {ledger.counted_games_played} — commit it")
     return 0

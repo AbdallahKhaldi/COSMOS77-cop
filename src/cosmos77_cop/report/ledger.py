@@ -14,6 +14,21 @@ from pathlib import Path
 from ..engine.config import GAME_CONFIG, signed_value
 
 LEDGER_FILE = "artifacts/league_ledger.json"
+
+
+def ledger_file(root: str | Path = ".") -> Path:
+    """Where the ledger LIVES for this process: env override first, repo file otherwise.
+
+    On the hub, runtime advances must land on the data volume (they survive redeploys)
+    and must NOT touch the repo working tree: a counted run arms behind a clean-tree
+    gate (rule 53), and any in-repo mutation — even a symlink swap — reads as dirty
+    and refuses the very game that produced it.  ``COSMOS_LEDGER_FILE`` points the
+    whole module at the volume twin; unset (a laptop), the committed repo file is it.
+    """
+    import os
+
+    override = os.environ.get("COSMOS_LEDGER_FILE")
+    return Path(override) if override else Path(root) / LEDGER_FILE
 LEAGUE = "network_and_league"
 
 
