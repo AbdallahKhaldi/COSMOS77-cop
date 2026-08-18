@@ -103,6 +103,26 @@
   .bar{flex:1;height:8px;background:var(--panel2);border-radius:99px;overflow:hidden}
   .bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .3s}
   footer{padding:44px 0;color:var(--mut);font-size:13px}
+  /* guided wizard */
+  .wiz{border:2px solid var(--gold);border-radius:16px;background:linear-gradient(180deg,#191708,#151b24 70%);
+       padding:20px;margin:18px 0}
+  .wiz-opp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0 4px}
+  @media(max-width:760px){.wiz-opp{grid-template-columns:1fr}}
+  .wiz-opp button{background:var(--panel2);border:2px solid var(--line);border-radius:12px;color:var(--text);
+       padding:12px;font-weight:700;cursor:pointer;text-align:left}
+  .wiz-opp button small{display:block;color:var(--mut);font-weight:400;font-size:12px;margin-top:3px}
+  .wiz-opp button.on{border-color:var(--gold);background:#1d1a09}
+  .dots{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}
+  .dots i{width:22px;height:8px;border-radius:99px;background:var(--panel2);border:1px solid var(--line)}
+  .dots i.done{background:var(--ok);border-color:var(--ok)}
+  .dots i.now{background:var(--gold);border-color:var(--gold)}
+  .wiz-step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:10px}
+  .wiz-step h3{margin:0 0 6px;font-size:18px}
+  .wiz-step .k{color:var(--gold);font-family:var(--mono);font-size:12px;letter-spacing:.12em}
+  .wiz-nav{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
+  .wiz-nav .btn{margin-top:0}
+  .wiz-nav .spacer{flex:1}
+  .wiz-done{color:var(--ok);font-weight:800;font-size:20px}
 </style>
 </head>
 <body>
@@ -130,11 +150,40 @@
 </div>
 
 <nav class="toc"><div class="wrap">
-  <a href="#mission1" style="color:var(--gold)">★ Mission 1</a><a href="#big">The big picture</a><a href="#setup">0 · Setup</a><a href="#contact">1 · Contact</a>
+  <a href="#wizard" style="color:var(--gold)">▶ Guided mode</a><a href="#mission1">★ Mission 1</a><a href="#big">The big picture</a><a href="#setup">0 · Setup</a><a href="#contact">1 · Contact</a>
   <a href="#choose">2 · Pick the path</a><a href="#friendly">3 · Friendlies</a><a href="#counted">4 · COUNTED</a>
   <a href="#after">5 · After</a><a href="#secrets">Keys</a><a href="#ports">Ports</a><a href="#facts">Fact sheet</a><a href="#glossary">Glossary</a><a href="#trouble">Trouble</a><a href="#rules">Never break</a>
 </div></nav>
 
+
+
+<section id="wizard"><div class="wrap">
+  <div class="stage">// GUIDED MODE — THE WHOLE CAMPAIGN, ONE STEP AT A TIME</div>
+  <h2>Run a team, start to finish</h2>
+  <p>Pick the team. The wizard shows exactly one thing to do, remembers where you are (even if you
+  close the file), and never lets you skip a safety step. The full reference for everything lives
+  further down this page.</p>
+  <div class="wiz">
+    <b style="letter-spacing:.05em">WHO ARE WE PLAYING?</b>
+    <div class="wiz-opp" id="wiz-opp">
+      <button data-opp="best2934">best2934 <small>✓ verified green 2026-08-16 · endpoints live · play this first</small></button>
+      <button data-opp="SMNGRP05">SMNGRP05 <small>config agreed · waiting on their endpoints</small></button>
+      <button data-opp="custom">another team… <small>any kit team — type their id</small></button>
+    </div>
+    <div id="wiz-customwrap" style="display:none">
+      <label class="f">Their group id (exactly as they wrote it)</label>
+      <input type="text" id="wiz-custom" placeholder="e.g. imreeyal">
+    </div>
+    <div class="dots" id="wiz-dots"></div>
+    <div class="wiz-step" id="wiz-step"></div>
+    <div class="wiz-nav">
+      <button class="btn ghost" id="wiz-back">◀ Back</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="wiz-restart" title="clears saved progress for THIS team only">restart this team</button>
+      <button class="btn" id="wiz-next">Done — next step ▶</button>
+    </div>
+  </div>
+</div></section>
 
 <section id="mission1"><div class="wrap">
   <div class="stage">// MISSION 1 — best2934: VERIFIED READY, PLAY THIS ONE FIRST</div>
@@ -971,6 +1020,26 @@ $("#g-go").onclick = () => {
   }
 };
 
+/* ---------- the counted SSH session, ONE source for wizard + generator ---------- */
+function countedBlocks(opp, cop, thief, single) {
+  const urlArgs = single ? "--their-single-url " + single
+    : "--their-cop-url " + cop + " --their-thief-url " + thief;
+  return [
+    "# BLOCK 1 — open the server (your terminal, any folder):\nrailway ssh",
+    "# BLOCK 2 — inside the server: arm THIS session and start the counted series\n" +
+    "export COSMOS_LEAGUE_COUNTED=true\n" +
+    "cd /app/COSMOS77-hub\n" +
+    "./.venv/bin/cosmos-hub-counted --opponent-gid " + opp + " \\\n  " + urlArgs +
+    "\n# read what it prints, then type exactly:  ARM COUNTED",
+    "# BLOCK 3 — after 'series finished': send OUR report (same session)\n" +
+    "export COSMOS_LEAGUE_COUNTED=true\n" +
+    "export COSMOS_LEDGER_FILE=/data/league_ledger.json\n" +
+    "cd /app/COSMOS77-cop\n" +
+    "uv run cosmos-cop report /data/runs/shared/<STAMP>/result_<GID>.json --counted --send\n" +
+    "# BLOCK 2's ending printed this exact command with the real filename — prefer the printed one.",
+  ];
+}
+
 /* ---------- counted generator (SSH on the hub) ---------- */
 $("#c-opp").onchange = () => { $("#c-customwrap").style.display =
   $("#c-opp").value === "custom" ? "block" : "none"; };
@@ -985,26 +1054,170 @@ $("#c-go").onclick = () => {
     '<p class="note red">Enter a valid group id.</p>'; return; }
   if (!single && !(cop && thief)) { out.innerHTML =
     '<p class="note red">Give their two urls, or one single url.</p>'; return; }
-  const urlArgs = single ? "--their-single-url " + single
-    : "--their-cop-url " + cop + " --their-thief-url " + thief;
-  out.appendChild(genPre(
-    "# BLOCK 1 — open the server (your Terminal, anywhere):\nrailway ssh"));
-  out.appendChild(genPre(
-    "# BLOCK 2 — inside the server: arm THIS session and start the counted series\n" +
-    "export COSMOS_LEAGUE_COUNTED=true\n" +
-    "cd /app/COSMOS77-hub\n" +
-    "./.venv/bin/cosmos-hub-counted --opponent-gid " + opp + " \\\n  " + urlArgs +
-    "\n# read what it prints, then type exactly:  ARM COUNTED"));
-  out.appendChild(genPre(
-    "# BLOCK 3 — after 'series finished': send OUR report (same session)\n" +
-    "export COSMOS_LEAGUE_COUNTED=true\n" +
-    "export COSMOS_LEDGER_FILE=/data/league_ledger.json\n" +
-    "cd /app/COSMOS77-cop\n" +
-    "uv run cosmos-cop report /data/runs/shared/<STAMP>/result_<GID>.json --counted --send\n" +
-    "# BLOCK 2's ending printed this exact command with the real filename — prefer the printed one."));
+  countedBlocks(opp, cop, thief, single).forEach((b) => out.appendChild(genPre(b)));
   out.appendChild(Object.assign(document.createElement("p"), { className: "note red",
     textContent: "It refuses to start if anything is off (already played this team, dirty state, dead mail token). A refusal is the system protecting the grade — read the message, tell the admin, don't force anything." }));
 };
+
+/* ================= GUIDED WIZARD — the whole campaign, one step at a time ========== */
+const KNOWN = {
+  best2934: { cop: "https://monogram-radio-blooper.ngrok-free.dev/cop/mcp",
+              thief: "https://monogram-radio-blooper.ngrok-free.dev/thief/mcp",
+              msg: "msg-best2934-go",
+              vals: "game_id best2934-vs-cosmos77\ngame_uid 98f8ea37-6472-97ad-9839-01514e7a32ea\nconfig sha256 9d129dd5958bf2b50dce50125308dae845c674a2f14c51d2cc07ccd1268402b2" },
+  SMNGRP05: { cop: "", thief: "",
+              msg: "msg-SMNGRP05",
+              vals: "game_id SMNGRP05-vs-cosmos77\ngame_uid a9ef6042-e900-bc7b-f229-af8299957670\nconfig sha256 db5b2cd0aa1a28418aad0f3ee114fcb16f6bdd522abfe66206c912eea22b5049" },
+};
+const WIZ = { opp: localStorage.getItem("cosmos77.wiz.opp") || "best2934" };
+
+function wkey(k) { return "cosmos77.wiz." + WIZ.opp + "." + k; }
+function wget(k, fb) { return localStorage.getItem(wkey(k)) || fb; }
+function wset(k, v) { localStorage.setItem(wkey(k), v); }
+function wizUrls() {
+  const known = KNOWN[WIZ.opp] || {};
+  return { cop: wget("cop", known.cop || ""), thief: wget("thief", known.thief || "") };
+}
+function urlInputs() {
+  const u = wizUrls();
+  return '<label class="f">Their COP url</label>' +
+    '<input type="text" data-wsave="cop" value="' + u.cop.replace(/"/g, "&quot;") + '" placeholder="https://their-host/cop/mcp">' +
+    '<label class="f">Their THIEF url</label>' +
+    '<input type="text" data-wsave="thief" value="' + u.thief.replace(/"/g, "&quot;") + '" placeholder="https://their-host/thief/mcp">' +
+    '<p class="note">One single url for both roles? Paste it into BOTH fields.</p>';
+}
+function engageList(kind) {
+  const u = wizUrls();
+  return '<ol style="margin-left:20px;line-height:1.9">' +
+    '<li>Open <a href="https://cosmos77-arena-production.up.railway.app" target="_blank">the arena</a> → press <b>ESC</b> → <b>MULTIPLAYER — CHALLENGE A TEAM</b></li>' +
+    '<li>Group id: <code>' + WIZ.opp + '</code></li>' +
+    (u.cop ? '<li>Their cop URL: <code>' + u.cop + '</code></li><li>Their thief URL: <code>' + u.thief + '</code></li>'
+           : '<li>Paste their URLs (saved from the earlier step)</li>') +
+    '<li>Pick <b>' + kind + '</b> → press <b>⚡ ENGAGE</b> → open the WATCH link</li></ol>' +
+    '<p class="note">"a run is already active"? A visitor demo is playing — wait a minute (or stop it at /admin) and press Engage again. ' +
+    'Their tooling needs to dial an IP instead? Use <a href="#gen">the Path-B generator</a> — pre-filled, then come back and mark this done.</p>';
+}
+const HASH_HOWTO = '<p>Arena → <b>ESC → REPLAYS</b> → open the run → click the yellow <b>settlement sha256</b> line (it copies itself). Paste it in the chat; ask for theirs.</p><p class="note gold"><b>Byte-equal both ways = proven.</b> Not equal = STOP, screenshot, send the admin. Do not continue to the next step.</p>';
+
+const STEPS = [
+  { k: "SETUP", t: "One-time setup (Railway) — do it now, in this order",
+    b: () => '<p class="note gold"><b>Good news:</b> the friendlies (steps 2–8) need NONE of this — ' +
+      'if the invite is not there yet, press Done and keep going; setup only becomes REQUIRED at step 9 (the counted game).</p>' +
+      '<p><b>1 · The invite.</b> The admin must invite <code>natortasneem@gmail.com</code> to the Railway ' +
+      'project (dashboard → cosmos77-arena → Settings → Members). Send the admin this if needed:</p>' +
+      preHtml("Send me the Railway invite (natortasneem@gmail.com) so I can run the counted games — Settings > Members on cosmos77-arena.") +
+      '<p><b>2 · Accept</b> the invite from the email, create/sign in to the Railway account with that address.</p>' +
+      '<p><b>3 · Install the Railway tool</b> (one paste):</p>' +
+      '<pre data-os="win">iwr https://railway.com/install.ps1 -useb | iex</pre>' +
+      '<pre data-os="mac">brew install railway || bash <(curl -fsSL https://railway.com/install.sh)</pre>' +
+      '<p class="note" data-os="win">Open <b>PowerShell</b> (Start → type PowerShell → Enter). If it says scripts are blocked: ' +
+      '<code>Set-ExecutionPolicy -Scope Process RemoteSigned</code> first, then paste again.</p>' +
+      '<p><b>4 · Log in</b> (a browser opens — use the invited email):</p>' + preHtml("railway login") +
+      '<p><b>5 · Register this computer + connect to the project:</b></p>' +
+      preHtml("railway ssh keys add\nrailway link --project 47e74a66-e98f-4c7e-8f2d-33909a676abf") +
+      '<p><b>6 · Test it</b> — this should drop you into the game server (type <code>exit</code> to leave):</p>' +
+      preHtml("railway ssh") +
+      '<p class="note">Any step fails → screenshot the window, send the admin, press Done and continue with the friendlies meanwhile.</p>' },
+  { k: "CONTACT", t: "Send the pairing message",
+    b: () => {
+      const known = KNOWN[WIZ.opp];
+      if (known) return '<p>Copy the ready message below into the class chat with <b>' + WIZ.opp + '</b>:</p>' + preHtml($("#" + known.msg).innerText.replace(/COPY$/, ""));
+      return '<p>Use the general message (works for every kit team) — copy from <a href="#contact">Stage 1, card ③</a> and send it to <b>' + WIZ.opp + '</b>.</p>';
+    } },
+  { k: "CROSS-CHECK", t: "Confirm the rules file matches",
+    b: () => {
+      const known = KNOWN[WIZ.opp];
+      const vals = known ? '<p>They must derive the SAME values (paste for them):</p>' + preHtml(known.vals)
+        : '<p>Exchange game.json files in chat; both sides confirm the SAME sha256 + game_uid. Save their file as <code>' + WIZ.opp + '.game.json</code> if the laptop path is ever needed.</p>';
+      return vals + '<p class="note red">A mismatch here = STOP and fix the file in chat. Never play on unconfirmed rules.</p>';
+    } },
+  { k: "AGREE", t: "Agree the plan in writing",
+    b: () => '<p>Three sentences from them, in the chat:</p><ul style="margin-left:20px;line-height:1.9">' +
+      '<li>a time <b>T</b> for the F1 friendly</li>' +
+      '<li>"retry rule: discard-and-rerun by written mutual agreement" — agreed</li>' +
+      '<li>their two URLs (or one single url)</li></ul>' + urlInputs() },
+  { k: "F1", t: "Play the F1 friendly (one sub-game)", b: () => engageList("F1 · 1 window") },
+  { k: "F1 PROOF", t: "Compare the settlement fingerprint", b: () => HASH_HOWTO },
+  { k: "F2", t: "Play the F2 friendly (all six)",
+    b: () => '<p>Same form, choose <b>F2 · 6 windows</b>. This is the dress rehearsal — the counted game differs only in the arming.</p>' + engageList("F2 · 6 windows") },
+  { k: "F2 PROOF", t: "Compare the fingerprint again", b: () => HASH_HOWTO },
+  { k: "GATE", t: "Counted pre-flight — all four must be true",
+    b: () => '<ul style="margin-left:20px;line-height:1.9">' +
+      '<li>F2 was clean and hashes matched ✔</li>' +
+      '<li>We have NEVER played a counted game vs <b>' + WIZ.opp + '</b> (one per team, ever — rule 52)</li>' +
+      '<li>They wrote IN THE CHAT: "this one is COUNTED, we file our report today"</li>' +
+      '<li>The admin knows the T and is reachable</li>' +
+      '<li><code>railway ssh</code> works on this computer (step 1 — if you skipped it, do it NOW)</li></ul>' +
+      '<p class="note red">Any box unticked → do not press Done.</p>' },
+  { k: "COUNTED", t: "Run the counted series (SSH, three blocks)",
+    b: () => { const u = wizUrls();
+      return '<p>Paste block by block. Type <code>ARM COUNTED</code> exactly when asked. Watch on the arena.</p>' +
+        countedBlocks(WIZ.opp, u.cop, u.thief, u.cop && u.cop === u.thief ? u.cop : "").map(preHtml).join("") +
+        '<p class="note red">A refusal is the system protecting the grade — read it, tell the admin, never force.</p>'; } },
+  { k: "REPORT", t: "File the report + confirm theirs",
+    b: () => '<p>BLOCK 3 sent ours (same day — rule 35 zeroes BOTH teams for a missing report). Now in the chat: ' +
+      'compare the settlement sha256 one more time, and get their "our report is filed" in writing.</p>' },
+  { k: "DONE", t: "Close out",
+    b: () => '<p class="wiz-done">✔ Counted game vs ' + WIZ.opp + ' complete.</p>' +
+      '<ul style="margin-left:20px;line-height:1.9"><li>Screenshot their confirmation, keep it</li>' +
+      '<li>Arena → LEAGUE shows the settled game</li>' +
+      '<li>Tell the admin: "counted vs ' + WIZ.opp + ' done, hashes equal, both filed"</li>' +
+      '<li>Pick the next team at the top — the pass bar is TWO different teams</li></ul>' },
+];
+function preHtml(text) {
+  return '<pre>' + text.replace(/&/g, "&amp;").replace(/</g, "&lt;") + '</pre>';
+}
+function wizRender() {
+  const i = Math.min(parseInt(wget("step", "0"), 10) || 0, STEPS.length - 1);
+  $$("#wiz-opp button").forEach((b) => b.classList.toggle("on", b.dataset.opp ===
+    (KNOWN[WIZ.opp] ? WIZ.opp : "custom")));
+  $("#wiz-customwrap").style.display = KNOWN[WIZ.opp] ? "none" : "block";
+  const dots = $("#wiz-dots"); dots.innerHTML = "";
+  STEPS.forEach((s, n) => { const d = document.createElement("i");
+    if (n < i) d.className = "done"; else if (n === i) d.className = "now";
+    d.title = (n + 1) + " · " + s.t; dots.appendChild(d); });
+  const step = STEPS[i];
+  $("#wiz-step").innerHTML = '<div class="k">STEP ' + (i + 1) + " / " + STEPS.length + " · " + step.k +
+    "</div><h3>" + step.t + "</h3>" + step.b();
+  $("#wiz-step").querySelectorAll("pre").forEach((pre) => {
+    const text = pre.innerText;
+    const b = document.createElement("button");
+    b.className = "copy"; b.textContent = "COPY";
+    b.onclick = () => copyText(text).then(
+      () => { b.textContent = "COPIED ✓"; setTimeout(() => b.textContent = "COPY", 1500); },
+      () => { b.textContent = COPY_HINT; setTimeout(() => b.textContent = "COPY", 2500); });
+    pre.appendChild(b);
+  });
+  $("#wiz-step").querySelectorAll("[data-wsave]").forEach((inp) => {
+    inp.oninput = () => wset(inp.dataset.wsave, inp.value.trim());
+  });
+  applyOS();  // wizard bodies carry [data-os] blocks too
+  $("#wiz-back").style.visibility = i === 0 ? "hidden" : "visible";
+  $("#wiz-next").textContent = i === STEPS.length - 1 ? "Campaign complete ✓" : "Done — next step ▶";
+}
+$$("#wiz-opp button").forEach((b) => {
+  b.onclick = () => {
+    WIZ.opp = b.dataset.opp === "custom" ? ($("#wiz-custom").value.trim() || "custom") : b.dataset.opp;
+    localStorage.setItem("cosmos77.wiz.opp", WIZ.opp);
+    wizRender();
+  };
+});
+$("#wiz-custom").oninput = () => {
+  WIZ.opp = $("#wiz-custom").value.trim() || "custom";
+  localStorage.setItem("cosmos77.wiz.opp", WIZ.opp);
+  wizRender();
+};
+$("#wiz-next").onclick = () => {
+  const i = parseInt(wget("step", "0"), 10) || 0;
+  if (i < STEPS.length - 1) { wset("step", String(i + 1)); wizRender(); window.scrollTo({top: $("#wizard").offsetTop, behavior: "smooth"}); }
+};
+$("#wiz-back").onclick = () => {
+  const i = parseInt(wget("step", "0"), 10) || 0;
+  if (i > 0) { wset("step", String(i - 1)); wizRender(); }
+};
+$("#wiz-restart").onclick = () => { wset("step", "0"); wizRender(); };
+if (!KNOWN[WIZ.opp]) $("#wiz-custom").value = WIZ.opp === "custom" ? "" : WIZ.opp;
+wizRender();
 </script>
 </body>
 </html>
