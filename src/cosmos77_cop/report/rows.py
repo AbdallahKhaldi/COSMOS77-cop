@@ -82,9 +82,9 @@ def final_result_block(
     """The derived aggregate + league fields (disarmed on friendlies, rules 37-38).
 
     ``games_played_including_this``: OUR count is the declaration's exclusive ledger count
-    + 1 (the §2.10 identity); the OPPONENT'S is null — never fabricated (kit SPEC §6.2,
-    "null is not 0/1"). ``tokens_total_series`` follows the same rule: we meter our own
-    consumption, we cannot meter theirs, and a fabricated 0 would be a false measurement.
+    + 1 (the §2.10 identity); the OPPONENT'S is null — the ONE field where SPEC §6.2 makes a
+    per-side difference legal. ``tokens_total_series`` is numeric BOTH sides (0 = unmeasured,
+    the filed-artifact convention the kit checker enforces).
     ``first_meeting_between_groups`` is the rule-52 ledger's answer.
     """
     groups = sorted([gid_a, gid_b])
