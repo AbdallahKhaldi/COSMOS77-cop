@@ -130,10 +130,70 @@
 </div>
 
 <nav class="toc"><div class="wrap">
-  <a href="#big">The big picture</a><a href="#setup">0 · Setup</a><a href="#contact">1 · Contact</a>
+  <a href="#mission1" style="color:var(--gold)">★ Mission 1</a><a href="#big">The big picture</a><a href="#setup">0 · Setup</a><a href="#contact">1 · Contact</a>
   <a href="#choose">2 · Pick the path</a><a href="#friendly">3 · Friendlies</a><a href="#counted">4 · COUNTED</a>
   <a href="#after">5 · After</a><a href="#secrets">Keys</a><a href="#ports">Ports</a><a href="#facts">Fact sheet</a><a href="#glossary">Glossary</a><a href="#trouble">Trouble</a><a href="#rules">Never break</a>
 </div></nav>
+
+
+<section id="mission1"><div class="wrap">
+  <div class="stage">// MISSION 1 — best2934: VERIFIED READY, PLAY THIS ONE FIRST</div>
+  <h2>best2934 — checked green on 2026-08-16</h2>
+  <div class="card gold">
+    <p><b>Status: everything is verified, both sides.</b> On 2026-08-16 our server ran its full
+    compatibility doctor against their live agents — <b>all 7 stages green</b> (reach, contract,
+    handshake, locks, uid, topology, forensics), verdict: <i>"ready — agree a window and play."</i>
+    Their endpoints (reserved domain, no rotation):</p>
+    <pre>their cop    https://monogram-radio-blooper.ngrok-free.dev/cop/mcp
+their thief  https://monogram-radio-blooper.ngrok-free.dev/thief/mcp
+their health https://monogram-radio-blooper.ngrok-free.dev/health</pre>
+    <p>All four of their declared forms match ours exactly: odd_even roles · subtractive_chebyshev_v1
+    · series_add · schema 1.2. <b>This is a Path A game — no laptop, no installs. You press one
+    button on our arena.</b></p>
+  </div>
+
+  <h3>Step 1 — send them this (if not already sent)</h3>
+  <pre id="msg-best2934-go">best2934 — checked and confirmed on our side, all green. Your endpoints
+answer our doctor clean (reach/contract/handshake/locks/uid all pass from
+our server). Cross-check for the record:
+game_id  best2934-vs-cosmos77
+game_uid 98f8ea37-6472-97ad-9839-01514e7a32ea
+config   sha256 9d129dd5958bf2b50dce50125308dae845c674a2f14c51d2cc07ccd1268402b2
+You are COP on 1,3,5, we on 2,4,6 · series_add · subtractive_chebyshev_v1 ·
+schema 1.2.
+
+Our agents (permanent domain, up 24/7):
+  cop   https://cosmos77-arena-production.up.railway.app/cop/mcp
+  thief https://cosmos77-arena-production.up.railway.app/thief/mcp
+
+Flow: F1 friendly (1 sub-game, reports to our two teams only) -> F2 -> the one
+counted game, counted only when both operators say so in writing, reports
+filed same day. Retry rule: discard-and-rerun by written mutual agreement.
+We're ready now — name a T, or say "go" and we start the F1 immediately.</pre>
+
+  <h3>Step 2 — when they say GO: start the F1 (60 seconds)</h3>
+  <ol style="margin-left:20px;line-height:1.9">
+    <li>Open <a href="https://cosmos77-arena-production.up.railway.app">the arena</a> → press <b>ESC</b>
+      → <b>MULTIPLAYER — CHALLENGE A TEAM</b></li>
+    <li>Group id: <code>best2934</code></li>
+    <li>Their cop URL: <code>https://monogram-radio-blooper.ngrok-free.dev/cop/mcp</code></li>
+    <li>Their thief URL: <code>https://monogram-radio-blooper.ngrok-free.dev/thief/mcp</code></li>
+    <li>Pick <b>F1 · 1 window</b> → press <b>⚡ ENGAGE</b> → open the WATCH link and enjoy the 3D feed</li>
+  </ol>
+  <p class="note">If it answers "a run is already active", a visitor demo is playing — wait a minute
+  (or stop it from <a href="https://cosmos77-arena-production.up.railway.app/admin">/admin</a>) and
+  press Engage again.</p>
+
+  <h3>Step 3 — after it settles: compare the fingerprint (2 minutes)</h3>
+  <p>Arena → <b>ESC → REPLAYS</b> → open the run → under the series verdict there is a yellow
+  <b>settlement sha256</b> line — <b>click it to copy</b>. Paste it in the chat and ask for theirs.
+  <b>Byte-equal both ways = the pairing is proven.</b> Not equal = stop, screenshot, send the admin.</p>
+
+  <h3>Step 4 — same day or next: F2, then the counted game</h3>
+  <p>F2 = the same Engage form with <b>F2 · 6 windows</b>. Same hash exchange after. When F2 is clean
+  and they confirm <b>in writing</b> "next one is COUNTED, we file today" → go to
+  <a href="#counted">Stage 4</a> (the counted generator below is already pre-filled for best2934).</p>
+</div></section>
 
 <section id="big"><div class="wrap">
   <div class="stage">// READ THIS FIRST — 2 MINUTES</div>
@@ -399,9 +459,10 @@ cd COSMOS77-cop &amp;&amp; uv sync &amp;&amp; cd ../COSMOS77-thief &amp;&amp; uv
           <code>~/cosmos77-league/&lt;their-id&gt;.game.json</code> first — the commands point there.</p>
         </div>
         <label class="f">Their COP address (what OUR THIEF dials)</label>
-        <input type="text" id="g-theircop" placeholder="http://10.0.0.7:8801/mcp   or   https://xxxx.ngrok.io/mcp">
+        <input type="text" id="g-theircop" value="https://monogram-radio-blooper.ngrok-free.dev/cop/mcp">
         <label class="f">Their THIEF address (what OUR COP dials)</label>
-        <input type="text" id="g-theirthief" placeholder="http://10.0.0.7:8802/mcp">
+        <input type="text" id="g-theirthief" value="https://monogram-radio-blooper.ngrok-free.dev/thief/mcp">
+        <p class="note">Pre-filled with best2934's live addresses — replace for another team.</p>
         <label class="f">Game type</label>
         <select id="g-kind">
           <option value="f1">F1 — one sub-game (always first)</option>
@@ -427,8 +488,8 @@ cd COSMOS77-cop &amp;&amp; uv sync &amp;&amp; cd ../COSMOS77-thief &amp;&amp; uv
     ours byte-for-byte.</b> Equal = the pairing is proven. Not equal = stop, screenshot, send to the admin.</span></label>
   <label class="check"><input type="checkbox" data-k="f2"><span><b>F2</b> (all six) — same path, same checks.
     This is the dress rehearsal: a counted game differs ONLY in the arming flags and where the report goes.</span></label>
-  <div class="note">Where is our hash? The result file of the run — on the arena: MENU → REPLAYS →
-  the run → the series panel shows it; or ask the admin to read it out. Friendly reports go to our
+  <div class="note">Where is our hash? Arena → ESC → REPLAYS → open the run → the yellow
+  <b>settlement sha256</b> line under the verdict — click it to copy. Friendly reports go to our
   two inboxes only — never to the lecturer (the system enforces this; you cannot get it wrong).</div>
 </div></section>
 
@@ -458,9 +519,10 @@ cd COSMOS77-cop &amp;&amp; uv sync &amp;&amp; cd ../COSMOS77-thief &amp;&amp; uv
       <input type="text" id="c-custom" placeholder="e.g. imreeyal">
     </div>
     <label class="f">Their COP url</label>
-    <input type="text" id="c-theircop" placeholder="https://their-host/cop/mcp">
+    <input type="text" id="c-theircop" value="https://monogram-radio-blooper.ngrok-free.dev/cop/mcp">
     <label class="f">Their THIEF url</label>
-    <input type="text" id="c-theirthief" placeholder="https://their-host/thief/mcp">
+    <input type="text" id="c-theirthief" value="https://monogram-radio-blooper.ngrok-free.dev/thief/mcp">
+    <p class="note">Pre-filled with best2934's live addresses — replace for another team.</p>
     <label class="f">…OR one single url for both roles (leave the two above empty)</label>
     <input type="text" id="c-single" placeholder="https://their-host/mcp">
     <button class="btn" id="c-go">Generate the counted session</button>
@@ -597,6 +659,10 @@ consensus    : the reference FIVE-key row
 locks        : scent  81ebee59640e80eae8ca9ee5f86abd26e7edf5cdbb27d15925cb6ee45ca6ddf4
                wire   229ae6487a418c3fcb6da9be404de2f2533c288ebc228811bff6dedc4164d6f7
                info   020947daeeb3f73494af9b04201326791742c7184085456e3517d21981ee1202</pre>
+    <h3>best2934's live endpoints (verified 2026-08-16, reserved domain)</h3>
+    <pre>cop    https://monogram-radio-blooper.ngrok-free.dev/cop/mcp
+thief  https://monogram-radio-blooper.ngrok-free.dev/thief/mcp
+health https://monogram-radio-blooper.ngrok-free.dev/health</pre>
     <h3>Our two agreed pairings</h3>
     <pre>best2934
   game_id  best2934-vs-cosmos77
@@ -678,7 +744,7 @@ SMNGRP05
     <p>⑦ When unsure — <b>stop and ask the admin.</b> A delayed game costs nothing; an improvised one can cost the course.</p>
   </div>
   <footer>COSMOS77 · course 203.3763 · this file is self-contained — works offline, saves your
-  checkboxes in the browser. Made 2026-08-16, matching cop 6d353a2 · thief fb014b3 · hub c8ad815.</footer>
+  checkboxes in the browser. Updated 2026-08-16 (Mission 1: best2934 verified green) · cop bdff98a · thief 3a0e903 · hub 1b0255c.</footer>
 </div></section>
 
 <div class="progress"><div class="wrap">
