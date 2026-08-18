@@ -539,7 +539,10 @@ cd COSMOS77-cop &amp;&amp; uv sync &amp;&amp; cd ../COSMOS77-thief &amp;&amp; uv
     This is the dress rehearsal: a counted game differs ONLY in the arming flags and where the report goes.</span></label>
   <div class="note">Where is our hash? Arena → ESC → REPLAYS → open the run → the yellow
   <b>settlement sha256</b> line under the verdict — click it to copy. Friendly reports go to our
-  two inboxes only — never to the lecturer (the system enforces this; you cannot get it wrong).</div>
+  two inboxes only — <b>your Gmail is one of them</b>, so sending a friendly report and seeing it
+  arrive in your own inbox is the built-in mail test. The lecturer's address is structurally
+  unreachable from a friendly (it is not custom-settable, on purpose — the guided wizard's F1
+  step has the exact commands).</div>
 </div></section>
 
 <section id="counted"><div class="wrap">
@@ -708,6 +711,12 @@ consensus    : the reference FIVE-key row
 locks        : scent  81ebee59640e80eae8ca9ee5f86abd26e7edf5cdbb27d15925cb6ee45ca6ddf4
                wire   229ae6487a418c3fcb6da9be404de2f2533c288ebc228811bff6dedc4164d6f7
                info   020947daeeb3f73494af9b04201326791742c7184085456e3517d21981ee1202</pre>
+    <h3>Our artifact filenames (kit grammar — what to say when asked for "the file")</h3>
+    <pre>result_&lt;game_id&gt;.json · log_&lt;game_id&gt;_gNN.json ·
+config_&lt;game_id&gt;_gNN.json · declaration_&lt;game_id&gt;.json
+(game_id example: best2934-vs-cosmos77 — alphabetical, joined with -vs-)
+They live on our cloud server: replay page for the hash, /admin evidence
+for the raw files (see Troubleshooting for the exact clicks).</pre>
     <h3>best2934's live endpoints (verified 2026-08-16, reserved domain)</h3>
     <pre>cop    https://monogram-radio-blooper.ngrok-free.dev/cop/mcp
 thief  https://monogram-radio-blooper.ngrok-free.dev/thief/mcp
@@ -768,6 +777,29 @@ SMNGRP05
     <p>Usually one side waiting for the other's dialect. Ours answers BOTH known dialects, so if it
     stalls, screenshot both sides' last lines and send the admin + tell the other team to check the
     kit's WARNINGS 2b. Waiting more than ~90 seconds never helps — agree a discard-and-rerun in chat.</p>
+  </div></details>
+  <details open><summary>They ask for a file we don't have (e.g. match_friendly_cosmos77.json)</summary><div class="inner">
+    <p>Each team's software names its files its own way. A name like
+    <code>match_friendly_cosmos77.json</code> is <b>their</b> system's file about playing us — it
+    exists on THEIR computer, not yours, and no search on your machine will find it. Copy-paste
+    answer for the chat:</p>
+    <pre>That filename is your side's naming — our system writes the kit-grammar set:
+  result_best2934-vs-cosmos77.json      (the series result — scores, winner,
+                                         mutual_agreement.sha256)
+  log_best2934-vs-cosmos77_gNN.json     (per sub-game sealed log)
+  config_best2934-vs-cosmos77_gNN.json  (per sub-game rules)
+  declaration_best2934-vs-cosmos77.json (pre-game declaration)
+For comparing results, the settlement sha256 is enough — ours is on our
+replay page; say if you want the full result JSON and we'll paste it.</pre>
+    <p><b>Getting OUR files yourself (browser only, no terminal):</b> our games run on the cloud
+    server, so the files live there — ① log in once at
+    <a href="https://cosmos77-arena-production.up.railway.app/admin">…/admin</a> (ops password),
+    then ② open
+    <code>https://cosmos77-arena-production.up.railway.app/api/admin/evidence?run_id=&lt;RUN-ID&gt;</code>
+    in the same browser — it lists that run's files; add
+    <code>&amp;file=&lt;name-from-the-list&gt;</code> to see one. RUN-ID is what the arena showed
+    (e.g. <code>f1-20260818-190000</code>). For hash comparison you never need this — the replay
+    page's yellow line is faster.</p>
   </div></details>
   <details><summary>They say OUR endpoint is down</summary><div class="inner">
     <p>Open <a href="https://cosmos77-arena-production.up.railway.app/health">/health</a> — 200 ok
@@ -1137,7 +1169,19 @@ const STEPS = [
       '<li>"retry rule: discard-and-rerun by written mutual agreement" — agreed</li>' +
       '<li>their two URLs (or one single url)</li></ul>' + urlInputs() },
   { k: "F1", t: "Play the F1 friendly (one sub-game)", b: () => engageList("F1 · 1 window") },
-  { k: "F1 PROOF", t: "Compare the settlement fingerprint", b: () => HASH_HOWTO },
+  { k: "F1 PROOF", t: "Compare the fingerprint + test our mail",
+    b: () => HASH_HOWTO +
+      '<h3 style="margin-top:18px">Optional but smart: prove the report email works (5 min)</h3>' +
+      '<p>Send the F1 friendly report — it goes ONLY to our two team inboxes ' +
+      '(<code>abdallahkh12@icloud.com</code> + <code>natortasneem@gmail.com</code>). ' +
+      '<b>The professor cannot receive a friendly report</b> — his address is not reachable from ' +
+      'this code path at all, so there is nothing to get wrong. In a FRESH ssh session ' +
+      '(important: nothing exported — the safety refuses mixed signals):</p>' +
+      preHtml("railway ssh\ncd /app/COSMOS77-cop\nls /data/runs/shared/" + "<RUN-ID>" + "/\n# find the result_....json name in that listing, then:\nuv run cosmos-cop report /data/runs/shared/" + "<RUN-ID>" + "/result_" + "<NAME>" + ".json --send") +
+      '<p class="note gold">RUN-ID is the id the arena showed for the F1 (e.g. f1-20260816-190000). ' +
+      'Then open YOUR OWN Gmail — the report arriving there is the whole test. ' +
+      'If it refuses with "half-armed": you have COSMOS_LEAGUE_COUNTED exported in this ' +
+      'session — type <code>exit</code> and ssh in fresh.</p>' },
   { k: "F2", t: "Play the F2 friendly (all six)",
     b: () => '<p>Same form, choose <b>F2 · 6 windows</b>. This is the dress rehearsal — the counted game differs only in the arming.</p>' + engageList("F2 · 6 windows") },
   { k: "F2 PROOF", t: "Compare the fingerprint again", b: () => HASH_HOWTO },
