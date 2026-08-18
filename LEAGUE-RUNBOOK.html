@@ -106,7 +106,7 @@
   /* guided wizard */
   .wiz{border:2px solid var(--gold);border-radius:16px;background:linear-gradient(180deg,#191708,#151b24 70%);
        padding:20px;margin:18px 0}
-  .wiz-opp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0 4px}
+  .wiz-opp{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0 4px}
   @media(max-width:760px){.wiz-opp{grid-template-columns:1fr}}
   .wiz-opp button{background:var(--panel2);border:2px solid var(--line);border-radius:12px;color:var(--text);
        padding:12px;font-weight:700;cursor:pointer;text-align:left}
@@ -168,6 +168,7 @@
     <div class="wiz-opp" id="wiz-opp">
       <button data-opp="best2934">best2934 <small>✓ verified green 2026-08-16 · endpoints live · play this first</small></button>
       <button data-opp="SMNGRP05">SMNGRP05 <small>config agreed · waiting on their endpoints</small></button>
+      <button data-opp="sharNamr">sharNamr <small>3/5 confirmed · needs their config + scent doc</small></button>
       <button data-opp="custom">another team… <small>any kit team — type their id</small></button>
     </div>
     <div id="wiz-customwrap" style="display:none">
@@ -379,8 +380,29 @@ nothing counted). Full sheet: PLAY-COSMOS77.md in our repos.</pre>
     </div>
   </div>
 
+
+  <div class="card" style="margin-top:14px">
+    <h3>③ sharNamr <span class="pill b" style="margin-left:6px">2 BLOCKERS OPEN</span></h3>
+    <p class="mut" style="font-size:13.5px">They proposed a friendly under THEIR scent model
+    (multiplicative_book_v1, doc hash c77a1260…) with THEIR config file
+    (match_friendly_cosmos77.json). Three of their five points are confirmed; two need files from
+    them before anyone connects. No endpoints exchanged yet.</p>
+    <pre id="msg-sharNamr">sharNamr — confirming in writing:
+YES Roles: cosmos77 Cop on 1/3/5, sharNamr Cop on 2/4/6 (sorted-pair rule).
+YES Label G002 (your label; our artifacts carry game_id cosmos77-vs-sharNamr).
+YES Reports: friendly stays between our two teams, nothing to the lecturer.
+    Retry rule: discard-and-rerun by written mutual agreement.
+OPEN Scent model: we DO run multiplicative_book_v1, but our registered doc
+    hash is 934c220d5bf62acaa3297c6c9d723ea954c220260b02292ca17f6d5daef9f4d9
+    and you declare c77a1260... Same name + different doc = the locked-model
+    check refuses the handshake at connect. Send your model doc (+ vectors)
+    and we reconcile to one doc first — likely minutes.
+OPEN Config: send the actual match_friendly_cosmos77.json file; we confirm
+    the sha-256 and derived game_uid back within minutes.
+Two files and we can connect the same day.</pre>
+  </div>
   <div class="card gold" style="margin-top:18px">
-    <h3>③ ANY other team — the general message (7–8 teams are on the kit)</h3>
+    <h3>④ ANY other team — the general message (7–8 teams are on the kit)</h3>
     <p class="mut" style="font-size:13.5px">Use this for every team we haven't paired with yet. It
     works as-is: everyone in the class follows the same community kit, so these are the exact fields
     they expect. You only fill in their group id when they reply.</p>
@@ -724,7 +746,18 @@ config_&lt;game_id&gt;_gNN.json · declaration_&lt;game_id&gt;.json
 (game_id example: best2934-vs-cosmos77 — alphabetical, joined with -vs-)
 They live on our cloud server: replay page for the hash, /admin evidence
 for the raw files (see Troubleshooting for the exact clicks).</pre>
-    <h3>best2934's live endpoints (verified 2026-08-16, reserved domain)</h3>
+    <h3>sharNamr — pairing state (as of 2026-08-18)</h3>
+    <pre>game_id       cosmos77-vs-sharNamr
+roles         cosmos77 COP on 1,3,5 · sharNamr COP on 2,4,6  (WE sort first
+              here — the opposite split from best2934/SMNGRP05; the wizard
+              and generators compute it automatically)
+game_uid      pending — needs their match_friendly_cosmos77.json
+scent model   THEY: multiplicative_book_v1 doc c77a1260…
+              WE register that name at doc 934c220d5bf6…  → MISMATCH: must be
+              reconciled to ONE doc before connecting, or the handshake refuses
+endpoints     not exchanged yet
+their label   G002 (fine; cosmetic)</pre>
+    <h3>best2934's live endpoints (last verified green 2026-08-16; tunnel OFFLINE at last check — ERR_NGROK_3200, ask them to restart ngrok)</h3>
     <pre>cop    https://monogram-radio-blooper.ngrok-free.dev/cop/mcp
 thief  https://monogram-radio-blooper.ngrok-free.dev/thief/mcp
 health https://monogram-radio-blooper.ngrok-free.dev/health</pre>
@@ -784,6 +817,21 @@ SMNGRP05
     <p>Usually one side waiting for the other's dialect. Ours answers BOTH known dialects, so if it
     stalls, screenshot both sides' last lines and send the admin + tell the other team to check the
     kit's WARNINGS 2b. Waiting more than ~90 seconds never helps — agree a discard-and-rerun in chat.</p>
+  </div></details>
+  <details open><summary>Their chat name and their server disagree (who ARE we playing?)</summary><div class="inner">
+    <p>The handshake pins identity: our agents verify the <b>group_id inside their greeting</b>
+    against the gid we engaged with. Chat names, typos and re-brands do not matter — <b>the server
+    wins</b>. Before ANY game, open their <code>/health</code> in a browser: the
+    <code>group_id</code> shown there is who they are on the wire, and it must equal the gid you
+    type into the Engage form (or the wizard). If a team says "we're X" but their health says "Y",
+    send them this:</p>
+    <pre>Your /health declares group_id "Y" but you introduced yourselves as "X".
+Our handshake pins the gid, so the game refuses unless they match. Fix your
+server's group id (or tell us to engage as "Y") and we play right after.</pre>
+    <p class="note gold">Real example from our own campaign: the monogram-radio-blooper endpoints
+    declared <code>best2934</code> (their kit issue #48 says the same), while a separate chat
+    thread negotiated as <code>sharNamr</code> — two different teams, crossed chats. The /health
+    check catches this in ten seconds.</p>
   </div></details>
   <details open><summary>They ask for a file we don't have (e.g. match_friendly_cosmos77.json)</summary><div class="inner">
     <p>Each team's software names its files its own way. A name like
@@ -1107,6 +1155,9 @@ const KNOWN = {
   SMNGRP05: { cop: "", thief: "",
               msg: "msg-SMNGRP05",
               vals: "game_id SMNGRP05-vs-cosmos77\ngame_uid a9ef6042-e900-bc7b-f229-af8299957670\nconfig sha256 db5b2cd0aa1a28418aad0f3ee114fcb16f6bdd522abfe66206c912eea22b5049" },
+  sharNamr: { cop: "", thief: "",
+              msg: "msg-sharNamr",
+              vals: "game_id cosmos77-vs-sharNamr\ngame_uid PENDING — needs their match_friendly_cosmos77.json\nscent: reconcile ONE multiplicative doc first (ours 934c220d… vs theirs c77a1260…)" },
 };
 const WIZ = { opp: localStorage.getItem("cosmos77.wiz.opp") || "best2934" };
 
