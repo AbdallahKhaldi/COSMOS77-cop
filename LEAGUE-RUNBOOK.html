@@ -302,11 +302,18 @@ single: https://cosmos77-arena-production.up.railway.app/mcp</pre>
     invite <code>natortasneem@gmail.com</code>. It takes a minute from a phone.</span></label>
   <label class="check"><input type="checkbox" data-k="s0b"><span><span class="who">YOU</span>
     accept the email invite, then install the Railway tool on your Mac — open Terminal and paste:</span></label>
-  <pre data-os="win">iwr https://railway.com/install.ps1 -useb | iex</pre>
-  <pre data-os="mac">brew install railway || bash <(curl -fsSL https://railway.com/install.sh)</pre>
-  <p class="note" data-os="win">Open <b>PowerShell</b> (press Start, type "PowerShell", Enter) and paste
-  that. If it says scripts are blocked, first run:
-  <code>Set-ExecutionPolicy -Scope Process RemoteSigned</code> then paste again.</p>
+  <pre data-os="win">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+irm get.scoop.sh | iex
+scoop install railway
+railway --version</pre>
+  <pre data-os="mac">brew install railway || bash <(curl -fsSL https://railway.com/install.sh)
+railway --version</pre>
+  <p class="note" data-os="win">Open <b>PowerShell</b> (Start → type "PowerShell" → Enter — NOT as
+  administrator) and paste the four lines one at a time. Line 1 asks a question — answer <b>Y</b>.
+  Lines 2–3 install Scoop (a Windows app installer) and then Railway through it. The last line must
+  print a version number — that is the success signal.
+  <b>Alternative</b> if Scoop misbehaves: <code>winget install OpenJS.NodeJS.LTS</code>, close and
+  reopen PowerShell, then <code>npm i -g @railway/cli</code>.</p>
   <label class="check"><input type="checkbox" data-k="s0c"><span><span class="who">YOU</span> log in
     (a browser window opens — use the invited email):</span></label>
   <pre>railway login</pre>
@@ -461,7 +468,7 @@ start. Propose a time and we are ready.</pre>
     <div class="card">
       <h3><span class="pill b">PATH B</span> Laptop — only when they insist on IP:port</h3>
       <p>One-time laptop prep (10 min, separate from Stage 0):</p>
-      <pre data-os="win">mkdir "$HOME\cosmos77-league"; cd "$HOME\cosmos77-league"
+      <pre data-os="win">mkdir -Force "$HOME\cosmos77-league" | Out-Null; cd "$HOME\cosmos77-league"
 git clone https://github.com/AbdallahKhaldi/COSMOS77-cop.git
 git clone https://github.com/AbdallahKhaldi/COSMOS77-thief.git
 cd COSMOS77-cop; uv sync; cd ..\COSMOS77-thief; uv sync; cd ..</pre>
@@ -1140,10 +1147,12 @@ const STEPS = [
       preHtml("Send me the Railway invite (natortasneem@gmail.com) so I can run the counted games — Settings > Members on cosmos77-arena.") +
       '<p><b>2 · Accept</b> the invite from the email, create/sign in to the Railway account with that address.</p>' +
       '<p><b>3 · Install the Railway tool</b> (one paste):</p>' +
-      '<pre data-os="win">iwr https://railway.com/install.ps1 -useb | iex</pre>' +
-      '<pre data-os="mac">brew install railway || bash <(curl -fsSL https://railway.com/install.sh)</pre>' +
-      '<p class="note" data-os="win">Open <b>PowerShell</b> (Start → type PowerShell → Enter). If it says scripts are blocked: ' +
-      '<code>Set-ExecutionPolicy -Scope Process RemoteSigned</code> first, then paste again.</p>' +
+      '<pre data-os="win">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser\nirm get.scoop.sh | iex\nscoop install railway\nrailway --version</pre>' +
+      '<p class="note" data-os="win">Open <b>PowerShell</b> (Start → type PowerShell → Enter — NOT as administrator). ' +
+      'Paste the four lines ONE AT A TIME. Line 1 asks a question — answer <b>Y</b>. The last line must print a ' +
+      'version number = success. If Scoop misbehaves: <code>winget install OpenJS.NodeJS.LTS</code>, reopen PowerShell, ' +
+      'then <code>npm i -g @railway/cli</code>.</p>' +
+      '<pre data-os="mac">brew install railway || bash <(curl -fsSL https://railway.com/install.sh)\nrailway --version</pre>' +
       '<p><b>4 · Log in</b> (a browser opens — use the invited email):</p>' + preHtml("railway login") +
       '<p><b>5 · Register this computer + connect to the project:</b></p>' +
       preHtml("railway ssh keys add\nrailway link --project 47e74a66-e98f-4c7e-8f2d-33909a676abf") +
