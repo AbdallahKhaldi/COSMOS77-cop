@@ -63,7 +63,8 @@ def test_full_probe_run_is_one_json_line_exit_zero_even_when_red(capsys):
     }
     assert report["summary"]["status"] == "red"
     assert report["stages"]["reach"]["status"] == "red"
-    assert report["stages"]["handshake"]["status"] == "green"
+    # bare {"ok": true} is honestly YELLOW since the MOAAMOHA mute-peer windows
+    assert report["stages"]["handshake"]["status"] == "yellow"
     assert report["target"]["mode"] == "per-role"
     assert report["summary"]["next_actions"][0].startswith("[reach]")
 
@@ -146,6 +147,7 @@ def test_cli_end_to_end_with_mocked_probe(monkeypatch, capsys):
     )
     assert main(["doctor", "--json", "--url", "https://one.example/mcp"]) == 0
     report = json.loads(capsys.readouterr().out.strip())
-    assert report["summary"]["status"] == "green"
+    # a bare-ok peer is YELLOW overall now: a probe cannot tell push-dialect from mute
+    assert report["summary"]["status"] == "yellow"
     assert report["target"]["mode"] == "single-endpoint-both-roles"
     assert report["stages"]["topology"]["detail"]["their_shape"] == "single-endpoint-both-roles"

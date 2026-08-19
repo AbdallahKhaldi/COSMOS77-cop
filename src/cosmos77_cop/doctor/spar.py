@@ -59,9 +59,24 @@ def handshake_stage(url: str | None, caller: Caller, greeting: dict[str, Any]) -
     detail: dict[str, Any] = {"response": text[:800]}
     if data is not None:
         detail["data"] = data
-    return Stage("handshake", GREEN,
-                 "greeting acknowledged (reference shape returns ok:true immediately; any "
-                 "refusal travels back as a ControlMessage, not a return value)", detail=detail)
+    # An acknowledgment is NOT a handshake.  A push-dialect peer answers {"ok": true}
+    # and then GREETS BACK on its own call — which this one-shot probe cannot observe —
+    # while a mute peer answers the exact same bytes and never greets anyone.  Both
+    # MOAAMOHA windows died on that ambiguity behind a green light: only a reply that
+    # CARRIES a greeting proves the exchange half of the contract from here.
+    reply_greeting = data.get("message") if isinstance(data, dict) else None
+    if isinstance(reply_greeting, dict) and "terms" in reply_greeting:
+        detail["their_greeting_gid"] = reply_greeting.get("group_id")
+        return Stage("handshake", GREEN,
+                     "greeting EXCHANGED — their reply carries their greeting "
+                     "(request/response dialect confirmed)", detail=detail)
+    return Stage("handshake", YELLOW,
+                 "greeting acknowledged but NOT returned — if this peer also pushes its own "
+                 "negotiate the handshake completes live, but a probe cannot confirm that; "
+                 "a peer that neither pushes nor replies-with-greeting stalls every real game",
+                 fix_line="ask the opponent: does your agent CALL our negotiate with its "
+                 "greeting, or return its greeting in this reply? One of the two must be true",
+                 detail=detail)
 
 
 def _describe(raw: object) -> str:

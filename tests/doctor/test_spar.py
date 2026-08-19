@@ -19,10 +19,10 @@ def test_every_code_n00_to_n10_has_a_diagnosis():
     assert "WIDER input" in SPAR_DIAGNOSES["SPAR-N10"]
 
 
-def test_ok_true_acknowledgement_is_green():
+def test_ok_true_acknowledgement_is_yellow():
     stage = handshake_stage("u", lambda url, g: SimpleNamespace(data={"ok": True}), GREETING)
-    assert stage.status == "green"
-    assert "ControlMessage" in stage.finding
+    assert stage.status == "yellow"
+    assert "NOT returned" in stage.finding
     assert stage.detail["data"] == {"ok": True}
 
 
@@ -59,6 +59,8 @@ def test_no_url_skips():
 
 @pytest.mark.parametrize("weird", [SimpleNamespace(data=None, content=[{"text": "hi"}]), "raw"])
 def test_non_reference_responses_never_crash(weird):
+    """Odd shapes must not crash — and a reply with NO greeting is honestly YELLOW now
+    (two live windows died behind the old green; see test_handshake_honesty)."""
     stage = handshake_stage("u", lambda url, g: weird, GREETING)
-    assert stage.status == "green"
+    assert stage.status == "yellow"
     assert stage.detail["response"]
