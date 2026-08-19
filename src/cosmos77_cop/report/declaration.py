@@ -36,8 +36,12 @@ def _peer_hardware(driver: SeriesDriver) -> dict[str, Any]:
     for report in driver.reports:
         for record in report.opp_records:
             payload = record.get("payload", {})
-            if payload.get("step") == 0 and isinstance(payload.get("spec"), dict):
-                return payload["spec"]
+            if payload.get("step") != 0:
+                continue
+            # both live dialects: MOAAMOHA writes hardware_spec, the reference spec
+            spec = payload.get("hardware_spec") or payload.get("spec")
+            if isinstance(spec, dict):
+                return spec
     return {}
 
 
