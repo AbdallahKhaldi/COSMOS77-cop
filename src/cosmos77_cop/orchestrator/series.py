@@ -112,6 +112,7 @@ class SeriesDriver:
             opponent_group_id=opp_gid, client=self.client, inbox=self.inbox,
             scent_model=self.scent_model,
             counted_games_played=self.num_games_declared,
+            code_version=self.code_version, hardware=self.hardware,
         )
 
     def play_window(self, window: int) -> SubGameReport:

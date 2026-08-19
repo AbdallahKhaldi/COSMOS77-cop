@@ -41,3 +41,19 @@ def test_public_mcp_url_env_overrides_the_loopback_identity(monkeypatch):
     assert gateway().identity["mcp_servers"]["self"] == public
     monkeypatch.delenv("COSMOS_PUBLIC_MCP_URL")
     assert gateway().identity["mcp_servers"]["self"].startswith("http://127.0.0.1:")
+
+
+def test_greeting_identity_carries_commit_and_hardware(tmp_path):
+    # opponents' displays read the GREETING for rule-53/-24 metadata (f2 lesson:
+    # MOAAMOHA saw "unknown" for both while they rode only in the audit records)
+    gw = gateway(code_version="b" * 40, hardware={"cpu_type": "x86_64", "ram_gb": 1})
+    assert gw.identity["github_commit"] == "b" * 40
+    assert gw.identity["hardware_spec"]["cpu_type"] == "x86_64"
+    driver = SeriesDriver(
+        game_cfg=CFG, peer_cfg=PeerConfig(), gid_a="cosmos77", gid_b="zulu",
+        out_dir=tmp_path, code_version="c" * 40, num_games_declared=0,
+        hardware={"cpu_type": "arm64"},
+    )
+    identity = driver.gateway_for(1).identity
+    assert identity["github_commit"] == "c" * 40
+    assert identity["hardware_spec"] == {"cpu_type": "arm64"}

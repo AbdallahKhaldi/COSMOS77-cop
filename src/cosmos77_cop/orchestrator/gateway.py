@@ -37,6 +37,8 @@ class Gateway:
         inbox: PeerInbox | None = None,
         scent_model: str | None = None,
         counted_games_played: int | None = None,
+        code_version: str | None = None,
+        hardware: dict[str, Any] | None = None,
     ) -> None:
         """Build every subsystem from validated config — nothing else constructs them.
 
@@ -64,6 +66,10 @@ class Gateway:
         }
         if counted_games_played is not None:
             self.identity["counted_games_played"] = int(counted_games_played)
+        if code_version:  # rule-53 hash where opponents' displays read it: the greeting
+            self.identity["github_commit"] = code_version
+        if hardware:  # rule-24 spec, same reason — audits carry both regardless
+            self.identity["hardware_spec"] = dict(hardware)
         self.inbox = inbox or PeerInbox(peer_cfg.queue_depth)
         self.mcp = build_server(
             self.inbox, f"cosmos77-{role}",
