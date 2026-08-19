@@ -20,6 +20,16 @@ def test_inbound_arrow_and_no_tap(capsys, monkeypatch):
     assert "<- negotiate @MOAAMOHA recv" in capsys.readouterr().out
 
 
+def test_who_tag_labels_shared_streams(capsys, monkeypatch):
+    # f2 runs both our roles into ONE shared events file — the tag names the speaker
+    seen = []
+    monkeypatch.setattr(wiretap, "TAP", seen.append)
+    monkeypatch.setattr(wiretap, "WHO", "police")
+    wiretap.emit("out", "receive_turn", "https://them/mcp", "ok", 5.0)
+    assert " police -> receive_turn " in capsys.readouterr().out
+    assert seen[0]["who"] == "police"
+
+
 def test_a_broken_tap_never_raises(monkeypatch):
     def boom(event):
         raise RuntimeError("sink died")

@@ -46,9 +46,11 @@ class EventSink:
     def tapped(cls, out_dir: str | Path) -> EventSink:
         """A sink with the wire monitor plugged in — serve/selfplay's constructor."""
         from ..net import wiretap
+        from ..orchestrator.brainbridge import ROLE
 
         sink = cls(out_dir)
         wiretap.TAP = sink.wire
+        wiretap.WHO = ROLE  # f2 shares ONE stream between both our roles — tag the speaker
         return sink
 
     def update(self, view: object) -> None:

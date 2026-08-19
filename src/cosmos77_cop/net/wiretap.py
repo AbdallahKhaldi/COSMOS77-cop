@@ -16,6 +16,7 @@ from collections.abc import Callable
 from typing import Any
 
 TAP: Callable[[dict[str, Any]], None] | None = None  # set by serve when --events is on
+WHO = ""  # this agent's role tag; set by serve so SHARED streams (f2: both roles) stay legible
 
 
 def emit(direction: str, tool: str, peer: str, status: str, ms: float | None = None) -> None:
@@ -24,9 +25,11 @@ def emit(direction: str, tool: str, peer: str, status: str, ms: float | None = N
         arrow = "->" if direction == "out" else "<-"
         stamp = time.strftime("%H:%M:%S", time.gmtime())
         took = f" {ms:.0f}ms" if ms is not None else ""
-        print(f"wire {stamp} {arrow} {tool} @{peer} {status}{took}", flush=True)
+        tag = f" {WHO}" if WHO else ""
+        print(f"wire {stamp}{tag} {arrow} {tool} @{peer} {status}{took}", flush=True)
         if TAP is not None:
-            TAP({"t": "wire", "direction": direction, "tool": tool, "peer": peer,
-                 "status": status, "ms": round(ms, 1) if ms is not None else None})
+            TAP({"t": "wire", "who": WHO or None, "direction": direction, "tool": tool,
+                 "peer": peer, "status": status,
+                 "ms": round(ms, 1) if ms is not None else None})
     except Exception:
         pass
