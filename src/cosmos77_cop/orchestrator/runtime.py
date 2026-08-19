@@ -29,7 +29,7 @@ def start_server(mcp: object, port: int, host: str = "127.0.0.1") -> uvicorn.Ser
     ``serve`` binds 0.0.0.0 and selfplay stays on loopback.
     """
     config = uvicorn.Config(
-        mcp.http_app(path="/mcp"), host=host, port=port, log_level="error"
+        mcp.http_app(path="/mcp"), host=host, port=port, log_level="info"
     )
     server = uvicorn.Server(config)
     threading.Thread(target=server.run, daemon=True).start()

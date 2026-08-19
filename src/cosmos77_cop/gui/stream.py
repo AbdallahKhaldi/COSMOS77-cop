@@ -52,3 +52,13 @@ class EventSink:
                 stream.flush()
         except Exception:  # the turn loop must never see a viewer fault
             self.errors += 1
+
+    def wire(self, event: dict[str, Any]) -> None:
+        """Append one wire-monitor line (same file, same never-fail contract)."""
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with self.path.open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n")
+                stream.flush()
+        except Exception:
+            self.errors += 1

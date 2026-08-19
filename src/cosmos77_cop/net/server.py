@@ -13,6 +13,8 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from . import wiretap
+
 KIND_NEGOTIATE = "negotiate"
 KIND_TURN = "turn"
 KIND_CONTROL = "control"
@@ -65,6 +67,7 @@ def build_server(
     @mcp.tool
     def negotiate(message: dict) -> dict:
         """Receive the opponent's greeting (terms, signature, pairing, locks, uid)."""
+        wiretap.emit("in", "negotiate", str((message or {}).get("group_id", "?")), "recv")
         inbox.push(KIND_NEGOTIATE, message)
         greeting = greeting_provider() if greeting_provider is not None else None
         if greeting is not None:
@@ -74,6 +77,9 @@ def build_server(
     @mcp.tool
     def receive_turn(message: dict) -> dict:
         """Receive one sealed half-turn (commit + hint + smell_grid + declarations)."""
+        wiretap.emit("in", "receive_turn",
+                     f"step {(message or {}).get('step', '?')} {(message or {}).get('sender', '')}",
+                     "recv")
         inbox.push(KIND_TURN, message)
         return OK
 
@@ -86,6 +92,8 @@ def build_server(
     @mcp.tool
     def submit_audit(payload: dict) -> dict:
         """Receive the opponent's end-of-game reveal (records + nonces + result claim)."""
+        wiretap.emit("in", "submit_audit",
+                     f"{len((payload or {}).get('records') or [])} records", "recv")
         inbox.push(KIND_AUDIT, payload)
         return OK
 

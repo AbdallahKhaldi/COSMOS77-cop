@@ -96,6 +96,9 @@ def serve_cmd(
         if window is not None:
             window.open(cfg.grid_size)
         sink = EventSink(out) if events else None
+        if sink is not None:
+            from .net import wiretap
+            wiretap.TAP = sink.wire  # every MCP call becomes a live line in the arena
         attachment = ViewAttachment(window=window, snapshot_dir=snapshots, extra=sink)
     driver = SeriesDriver(
         game_cfg=cfg,

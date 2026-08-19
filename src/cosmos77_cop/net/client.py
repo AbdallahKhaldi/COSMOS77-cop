@@ -12,12 +12,14 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import threading
+import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
 from fastmcp import Client
 from fastmcp.client.transports import StreamableHttpTransport
 
+from . import wiretap
 from .httpfactory import http_client_factory
 
 DEFAULT_CONNECT_TIMEOUT_S = 10.0
@@ -40,6 +42,7 @@ class PeerClient:
         connect_timeout_s: float = DEFAULT_CONNECT_TIMEOUT_S,
     ) -> None:
         """Dial *url*; tests may inject an in-memory fastmcp transport instead."""
+        self.url = url
         self.connect_timeout_s = connect_timeout_s
         self._factory = transport_factory or (
             lambda: Client(
@@ -85,14 +88,20 @@ class PeerClient:
     def call(self, tool: str, args: dict[str, Any], *, deadline_s: float) -> object:
         """Call *tool* with *args*; raise :class:`PeerCallError` on failure or deadline expiry."""
         loop = self._ensure_loop()
+        started = time.monotonic()
         future = asyncio.run_coroutine_threadsafe(self._call_with_reopen(tool, args), loop)
         try:
-            return future.result(timeout=deadline_s)
+            result = future.result(timeout=deadline_s)
         except TimeoutError as exc:
             future.cancel()
+            wiretap.emit("out", tool, self.url, "DEADLINE", (time.monotonic() - started) * 1000)
             raise PeerCallError(f"{tool}: deadline of {deadline_s}s expired") from exc
         except Exception as exc:
+            wiretap.emit("out", tool, self.url, f"ERR {str(exc)[:60]}",
+                         (time.monotonic() - started) * 1000)
             raise PeerCallError(f"{tool}: {exc}") from exc
+        wiretap.emit("out", tool, self.url, "ok", (time.monotonic() - started) * 1000)
+        return result
 
     async def _with_session(self, fn: Callable[[Client], Awaitable[object]]) -> object:
         client = await self._acquire()
