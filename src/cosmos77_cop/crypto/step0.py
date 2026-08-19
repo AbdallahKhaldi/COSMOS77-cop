@@ -83,6 +83,10 @@ def build_step0(
         "group_name": group_name,
         "model": model,
         "code_version": code_version,
+        # Rule 53's canonical field name — opponents' checkers read THIS key for the
+        # deployed 40-hex (f2 rematch: MOAAMOHA "didn't get the commit hash" because
+        # ours rode only in code_version). Same value, both names, tolerated extension.
+        "github_commit": code_version,
         "num_games_declared": num_games_declared,
         "spec": spec,
     }
