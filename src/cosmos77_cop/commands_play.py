@@ -95,10 +95,7 @@ def serve_cmd(
         window = LiveWindow(f"cosmos77 {ROLE} — local truth") if gui else None
         if window is not None:
             window.open(cfg.grid_size)
-        sink = EventSink(out) if events else None
-        if sink is not None:
-            from .net import wiretap
-            wiretap.TAP = sink.wire  # every MCP call becomes a live line in the arena
+        sink = EventSink.tapped(out) if events else None  # tapped: wire monitor plugged in
         attachment = ViewAttachment(window=window, snapshot_dir=snapshots, extra=sink)
     driver = SeriesDriver(
         game_cfg=cfg,

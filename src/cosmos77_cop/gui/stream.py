@@ -42,6 +42,15 @@ class EventSink:
         self.path = Path(out_dir) / EVENTS_FILENAME
         self.errors = 0
 
+    @classmethod
+    def tapped(cls, out_dir: str | Path) -> EventSink:
+        """A sink with the wire monitor plugged in — serve/selfplay's constructor."""
+        from ..net import wiretap
+
+        sink = cls(out_dir)
+        wiretap.TAP = sink.wire
+        return sink
+
     def update(self, view: object) -> None:
         """Duck-typed window sink: append *view* as one flushed JSON line."""
         try:
