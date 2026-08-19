@@ -8,7 +8,7 @@ receiver may refuse an empty one).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 CONTROL_KINDS = ("enable", "status", "restart", "quit")
@@ -16,8 +16,13 @@ RESULT_CLAIMS = ("capture", "survival", "timeout")
 
 
 def now_iso() -> str:
-    """ISO-8601 UTC, second precision — the wire timestamp."""
-    return datetime.now(UTC).isoformat(timespec="seconds")
+    """ISO-8601 in system-local time WITH the utc offset, second precision.
+
+    The offset makes the instant unambiguous for cross-team compare while the
+    rendered hour matches the operator's clock (the hub sets TZ=Asia/Jerusalem;
+    a bare-UTC stamp had operators seeing games "3 hours ago").
+    """
+    return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
 @dataclass(frozen=True)

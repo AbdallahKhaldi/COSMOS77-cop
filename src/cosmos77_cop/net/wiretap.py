@@ -23,7 +23,7 @@ def emit(direction: str, tool: str, peer: str, status: str, ms: float | None = N
     """Record one wire event: ``direction`` is ``out`` (we dialed) or ``in`` (they did)."""
     try:
         arrow = "->" if direction == "out" else "<-"
-        stamp = time.strftime("%H:%M:%S", time.gmtime())
+        stamp = time.strftime("%H:%M:%S", time.localtime())  # operator's clock, not UTC
         took = f" {ms:.0f}ms" if ms is not None else ""
         tag = f" {WHO}" if WHO else ""
         print(f"wire {stamp}{tag} {arrow} {tool} @{peer} {status}{took}", flush=True)
