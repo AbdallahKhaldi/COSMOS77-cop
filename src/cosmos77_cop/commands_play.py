@@ -14,6 +14,7 @@ from .orchestrator.brainbridge import ROLE
 from .orchestrator.identity import GROUP_ID, TEAM_REPOS
 from .orchestrator.peerconf import load_peer_config
 from .orchestrator.runtime import start_server
+from .orchestrator.sequence import gate, todo_windows
 from .orchestrator.series import SeriesDriver
 from .protocol.ids import game_id, game_uid
 from .protocol.outcome import ZEROED
@@ -112,17 +113,17 @@ def serve_cmd(
         scent_model=scent_model,
         view_attachment=attachment,
     )
-    todo = (
-        [int(w) for w in windows_spec.split(",")] if windows_spec else list(range(1, windows + 1))
-    )
+    todo = todo_windows(windows_spec, windows)
     server = start_server(driver.mcp, port, host=host)
     summary = {"settled": False}
     try:
         for window in todo:
+            gate(out, window, armed=bool(windows_spec), timeout_s=peer.window_barrier_s)
             report = driver.play_window(window)
             settled = bool(report.settlement and report.settlement.settled)
             print(f"g{window:02d} {ROLE}: {report.result} ({report.reason}) settled={settled}")
         if close:
+            gate(out, windows + 1, armed=bool(windows_spec), timeout_s=peer.window_barrier_s)
             summary = finish_series(
                 driver,
                 writer,

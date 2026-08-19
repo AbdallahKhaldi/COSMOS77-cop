@@ -34,6 +34,7 @@ class PeerConfig:
     reorder_window: int = 4
     queue_depth: int = 100
     handshake_budget_s: float = 60.0
+    window_barrier_s: float = 900.0
     trash_provider: str = "template"
     trash_model: str = LLM_MODEL
     hint_timeout_s: float = 12.0
@@ -79,6 +80,9 @@ def load_peer_config(
         queue_depth=int(network.get("queue_depth", PeerConfig.queue_depth)),
         handshake_budget_s=float(
             network.get("handshake_budget_seconds", PeerConfig.handshake_budget_s)
+        ),
+        window_barrier_s=float(
+            network.get("window_barrier_seconds", PeerConfig.window_barrier_s)
         ),
         trash_provider=str(trash.get("provider", PeerConfig.trash_provider)),
         trash_model=str(trash.get("model", PeerConfig.trash_model)),
