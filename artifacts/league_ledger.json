@@ -1,7 +1,14 @@
 {
   "_schema": "rule-52 counted-game ledger: one counted series per opponent, advanced only by a settled counted run.",
-  "counted_games": {},
-  "counted_games_played": 0,
+  "counted_games": {
+    "MOAAMOHA": {
+      "game_id": "MOAAMOHA-vs-cosmos77",
+      "game_uid": "d67d6291-2c00-3e55-1bc3-d4424c143b56",
+      "settled_at": "2026-08-20T02:59:46+03:00",
+      "won": true
+    }
+  },
+  "counted_games_played": 1,
   "max_games": 10,
   "min_to_pass": 2
 }
