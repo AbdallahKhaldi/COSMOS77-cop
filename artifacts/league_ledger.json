@@ -6,9 +6,15 @@
       "game_uid": "d67d6291-2c00-3e55-1bc3-d4424c143b56",
       "settled_at": "2026-08-20T02:59:46+03:00",
       "won": true
+    },
+    "vibecode": {
+      "game_id": "cosmos77-vs-vibecode",
+      "game_uid": "06f81d92-73bb-2426-9013-3d6ca94c2c4a",
+      "settled_at": "2026-08-23T00:27:54+03:00",
+      "won": false
     }
   },
-  "counted_games_played": 1,
+  "counted_games_played": 2,
   "max_games": 10,
   "min_to_pass": 2
 }
