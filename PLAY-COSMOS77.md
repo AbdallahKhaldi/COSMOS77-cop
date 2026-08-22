@@ -8,7 +8,7 @@ group chat or on a kit issue — first contact on the record beats a DM.
 
 ```
 group_id:        cosmos77
-members:         Abdallah Khaldi (323118794) · Tasneem Natour (212389712)
+members:         Abdallah Khaldi (212389712) · Tasneem Natour (323118794)
 repos:           cop  https://github.com/AbdallahKhaldi/COSMOS77-cop
                  thief https://github.com/AbdallahKhaldi/COSMOS77-thief
 topology:        role-split (two endpoints; one address per role) — single-URL relay also offered
