@@ -103,3 +103,27 @@ def test_the_league_address_appears_in_exactly_one_module():
     assert source.count(LEAGUE_ADDRESS) == 1
     assert rec.is_league_address(f" {LEAGUE_ADDRESS.upper()} ")
     assert not rec.is_league_address("someone@example.com")
+
+
+def test_friendly_cc_extends_friendly_only_and_refuses_the_lecturer(monkeypatch):
+    # mutual friendly-report exchange (vibecode pairing): extra inboxes ride the
+    # FRIENDLY branch only; the league address stays structurally out of reach
+    from cosmos77_cop.report.recipients import (
+        FRIENDLY_INBOXES,
+        LEAGUE_ADDRESS,
+        ArmingError,
+        Posture,
+        recipients_for,
+    )
+
+    monkeypatch.setenv("COSMOS_FRIENDLY_CC", "agentsorch@gmail.com , ")
+    friendly = recipients_for(Posture(config_counted=False, cli_counted=False))
+    assert friendly == FRIENDLY_INBOXES + ("agentsorch@gmail.com",)
+    counted = recipients_for(Posture(config_counted=True, cli_counted=True))
+    assert counted == (LEAGUE_ADDRESS,)  # cc ignored entirely on the counted branch
+    monkeypatch.setenv("COSMOS_FRIENDLY_CC", "RMISEGAL+uoh26finalgame@gmail.com")
+    try:
+        recipients_for(Posture(config_counted=False, cli_counted=False))
+        raise AssertionError("league address must refuse in COSMOS_FRIENDLY_CC")
+    except ArmingError:
+        pass

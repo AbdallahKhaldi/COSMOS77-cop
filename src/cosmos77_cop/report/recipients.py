@@ -40,7 +40,26 @@ def recipients_for(posture: Posture) -> tuple[str, ...]:
     """The ONLY function that can produce the league address."""
     if posture.counted:
         return (LEAGUE_ADDRESS,)
-    return FRIENDLY_INBOXES
+    return FRIENDLY_INBOXES + _friendly_cc()
+
+
+def _friendly_cc() -> tuple[str, ...]:
+    """Per-send extra FRIENDLY inboxes (mutual report exchange with an opponent).
+
+    ``COSMOS_FRIENDLY_CC`` is comma-separated and refuses the league address in any
+    spelling — the lecturer stays reachable ONLY through the doubly-armed counted
+    branch, exactly as before this seam existed.
+    """
+    import os
+
+    extras = tuple(
+        addr.strip() for addr in os.environ.get("COSMOS_FRIENDLY_CC", "").split(",")
+        if addr.strip()
+    )
+    for addr in extras:
+        if "rmisegal" in addr.lower():
+            raise ArmingError("COSMOS_FRIENDLY_CC may never carry the league address")
+    return extras
 
 
 def assert_deliverable(posture: Posture, *, has_credentials: bool, settled: bool) -> None:
